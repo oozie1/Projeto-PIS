@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Meu Clone IMDb</title>
+    <title></title>
     <style>
         body { font-family: sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -20,12 +20,16 @@
 
     <header>
         <h1>IMDb Clone</h1>
+    <div class="auth-buttons">
+        <a href="/auth/login" style="color: white; margin-right: 15px; text-decoration: none;">Entrar</a>
+        <a href="/auth/register" style="background-color: #f5c518; color: black; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">Criar Conta</a>
+    </div>
+        
+    </header>
         <form action="/search" method="GET">
             <input type="text" name="q" placeholder="Pesquisar filmes...">
             <button type="submit">Buscar</button>
         </form>
-    </header>
-
     <div class="grid">
         <% if(movies.length > 0) { %>
             <% movies.forEach(movie => { %>
