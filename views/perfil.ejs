@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Meu Perfil</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; margin: 0; padding: 40px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { margin: 0; color: #f5c518; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .card { background: #1e1e1e; border-radius: 8px; overflow: hidden; transition: transform 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .card:hover { transform: scale(1.05); z-index: 10; border: 2px solid #f5c518; }
+        .card a { text-decoration: none; color: inherit; display: block; height: 100%; }
+        .card img { width: 100%; height: 300px; object-fit: cover; }
+        .info { padding: 15px; text-align: center; }
+        .info h4 { margin: 0; font-size: 1rem; color: #fff; }
+        .btn-home { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; }
+        .btn-logout { background: #e21c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: opacity 0.2s; }
+        .btn-logout:hover { opacity: 0.8; }
+        .empty-state { text-align: center; padding: 50px; color: #777; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Olá, <%= user.nome_utilizador %>!</h1>
+            <p style="color: #aaa; margin: 5px 0 0 0;">Bem-vindo à tua área pessoal.</p>
+        </div>
+        <div>
+            <a href="/" class="btn-home">Voltar ao Início</a>
+            <a href="/auth/logout" class="btn-logout">Sair</a>
+        </div>
+    </header>
+
+    <h2 style="border-left: 5px solid #f5c518; padding-left: 15px; margin-bottom: 25px;">Os teus Favoritos</h2>
+
+    <% if (favoritos.length === 0) { %>
+        <div class="empty-state">
+            <p>Ainda não tens filmes favoritos.</p>
+            <a href="/" style="color: #f5c518; text-decoration: none;">Vai explorar o catálogo!</a>
+        </div>
+    <% } else { %>
+        <div class="grid">
+            <% favoritos.forEach(filme => { %>
+                <div class="card">
+                    <a href="/movie/<%= filme.tmdb_id %>">
+                        <img src="https://image.tmdb.org/t/p/w300<%= filme.poster_url %>" alt="<%= filme.nome %>">
+                        <div class="info">
+                            <h4><%= filme.nome %></h4>
+                        </div>
+                    </a>
+                </div>
+            <% }) %>
+        </div>
+    <% } %>
+
+</body>
+</html>

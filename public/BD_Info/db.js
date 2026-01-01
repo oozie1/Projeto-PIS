@@ -8,7 +8,7 @@ const dbConfig = {
 };
 
 const createNewConnection = () => {
-    return mysql.createConnection(connectionOptions);
+    return mysql.createConnection(dbConfig);
 };
 
 module.exports = { createNewConnection };

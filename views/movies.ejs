@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= movie.title %> - Detalhes</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 40px; }
+        a { text-decoration: none; color: #f5c518; transition: 0.2s; }
+        a:hover { color: #fff; }
+        .nav-back { display: inline-block; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem; }
+        .movie-container { display: flex; gap: 40px; max-width: 1200px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .poster-wrapper { flex-shrink: 0; }
+        .poster { width: 300px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        .info { flex-grow: 1; }
+        h1 { margin-top: 0; color: #fff; font-size: 2.5rem; }
+        .meta-info { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
+        .overview { line-height: 1.6; margin-bottom: 30px; }
+        .rating { color: #f5c518; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; display: inline-block; background: #333; padding: 5px 10px; border-radius: 5px; }
+        .actions-panel { background-color: #252525; padding: 25px; border-radius: 10px; border: 1px solid #333; margin-top: 30px; }
+        .actions-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        form { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #ccc; }
+        input[type="number"], textarea { width: 100%; padding: 12px; background-color: #333; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; font-family: inherit; box-sizing: border-box; }
+        input:focus, textarea:focus { outline: none; border-color: #f5c518; }
+        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; font-size: 1rem; transition: transform 0.2s; display: inline-block; }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-primary { background-color: #f5c518; color: #000; }
+        .btn-fav { background-color: #e21c3c; color: white; width: 100%; }
+        .login-warning { background: #333; padding: 15px; border-radius: 5px; text-align: center; color: #aaa; }
+        @media (max-width: 768px) {
+            .movie-container { flex-direction: column; align-items: center; }
+            .poster { width: 100%; max-width: 300px; }
+            .info { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="/" class="nav-back">⬅ Voltar à Página Inicial</a>
+
+    <div class="movie-container">
+        <div class="poster-wrapper">
+            <% if (movie.poster_path) { %>
+                <img class="poster" src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
+            <% } else { %>
+                <img class="poster" src="https://via.placeholder.com/300x450?text=Sem+Imagem" alt="Sem Imagem">
+            <% } %>
+        </div>
+
+        <div class="info">
+            <h1><%= movie.title %> <span style="font-weight:normal; font-size: 1.5rem; color:#888;">(<%= movie.release_date ? movie.release_date.split('-')[0] : 'N/A' %>)</span></h1>
+            
+            <div class="rating">★ <%= movie.vote_average.toFixed(1) %> / 10</div>
+
+            <p class="meta-info">
+                <strong>Géneros:</strong> <%= movie.genres.map(g => g.name).join(', ') %>
+            </p>
+
+            <p class="overview"><%= movie.overview || "Sem sinopse disponível." %></p>
+
+            <% if (user) { %>
+                <div class="actions-panel">
+                    <h3>Ações</h3>
+                    
+                    <form action="/api/conteudo/favoritos" method="POST">
+                        <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                        <input type="hidden" name="titulo" value="<%= movie.title %>">
+                        <input type="hidden" name="poster" value="<%= movie.poster_path %>">
+                        <input type="hidden" name="tipo" value="Filme"> 
+                        <button type="submit" class="btn btn-fav">Adicionar aos Favoritos</button>
+                    </form>
+
+                    <form action="/api/conteudo/review" method="POST">
+                        <h4 style="margin-bottom: 10px;">Deixar uma Review:</h4>
+                        <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                        <input type="hidden" name="titulo" value="<%= movie.title %>">
+                        <input type="hidden" name="poster" value="<%= movie.poster_path %>">
+                        <input type="hidden" name="tipo" value="Filme">
+                        
+                        <label>Nota (1-10):</label>
+                        <input type="number" name="classificacao" min="1" max="10" required>
+                        
+                        <label>A tua opinião:</label>
+                        <textarea name="critica" placeholder="Escreve aqui o que achaste..." rows="4"></textarea>
+                        
+                        <button type="submit" class="btn btn-primary">Publicar Review</button>
+                    </form>
+                </div>
+            <% } else { %>
+                <div class="actions-panel login-warning">
+                    <p>Queres guardar nos favoritos ou deixar review? <br> Faz <a href="/auth/login">Login</a> ou <a href="/auth/register">Registo</a>.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+</body>
+</html>
