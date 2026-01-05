@@ -20,9 +20,11 @@ router.post('/favoritos', checkAuth, (req, res) => {
     
     connection.query(checkSql, [tmdb_id], (err, results) => {
         if (err) { 
-            connection.end(); 
-            return res.send("Erro BD ao verificar filme"); 
-        }
+    console.error("ERRO MYSQL:", err); // <--- Isto vai mostrar o erro no terminal
+    console.log("DADOS RECEBIDOS:", req.body); // <--- Isto confirma se os dados chegaram
+    connection.end(); 
+    return res.send("Erro BD ao verificar filme: " + err.message); // Mostra o erro na tela também
+}
 
         const insertFavorito = (idCont) => {
             const favSql = 'INSERT INTO Favoritos (id_utilizador, id_conteudo) VALUES (?, ?)';

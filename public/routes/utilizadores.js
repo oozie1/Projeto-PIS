@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createNewConnection } = require('../BD_Info/db'); 
+const { createNewConnection } = require('../BD_Info/db.js'); 
 
 router.get('/login', (req, res) => {
     res.render('login');
@@ -50,15 +50,15 @@ router.post('/register', (req, res) => {
     const connection = createNewConnection();
     connection.connect();
 
-    const sql = 'INSERT INTO Utilizadores (nome_utilizador, email, senha) VALUES (?, ?, ?)';
+    const sql = 'INSERT INTO Utilizadores (nome_utilizador, email, password_hash) VALUES (?, ?, ?)';
     
     connection.query(sql, [nome, email, senha], (err, result) => {
-        connection.end();
 
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') {
                 return res.send('<script>alert("Este email já está registado!"); window.history.back();</script>');
             }
+            console.error(err);
             return res.status(500).send("Erro interno ao criar conta.");
         }
         res.redirect('/auth/login');
@@ -71,7 +71,7 @@ router.post('/login', (req, res) => {
     const connection = createNewConnection();
     connection.connect();
 
-    const sql = "SELECT * FROM utilizadores WHERE email = ? AND senha = ?";
+    const sql = "SELECT * FROM utilizadores WHERE email = ? AND password_hash = ?";
     
     connection.query(sql, [email, senha], (err, results) => {
         connection.end();
