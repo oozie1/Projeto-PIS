@@ -2,93 +2,85 @@ DROP SCHEMA IF EXISTS `BD_ProjetoPIS`;
 CREATE SCHEMA `BD_ProjetoPIS`;
 USE `BD_ProjetoPIS`;
 
--- Nao se esquecam que este nome é o nome da base de dados
-
-CREATE TABLE `Utilizadores` (
-  `id_utilizador` INT NOT NULL AUTO_INCREMENT,
-  `nome_utilizador` VARCHAR(100) NOT NULL,
-  `email` VARCHAR(100) NOT NULL UNIQUE,
-  `password_hash` VARCHAR(255) NOT NULL,
-  `data_registo` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_admin` BOOLEAN NOT NULL DEFAULT FALSE,
-  PRIMARY KEY (`id_utilizador`)
-);
-
-CREATE TABLE `Generos` (
-  `id_genero` INT NOT NULL AUTO_INCREMENT,
-  `nome_genero` VARCHAR(50) NOT NULL UNIQUE,
-  PRIMARY KEY (`id_genero`)
-);
-
-CREATE TABLE `Conteudo` (
-  `id_conteudo` INT NOT NULL AUTO_INCREMENT,
-  `tipo` ENUM('Filme', 'Serie') NOT NULL,
-  `nome` VARCHAR(255) NOT NULL,
-  `sinopse` TEXT NULL,
-  `duracao_minutos` INT NULL,
-  `ano_lancamento` YEAR NULL,
-  `nome_diretor` VARCHAR(150) NULL, 
-  `id_genero` INT NULL, -- O conteúdo tem UM género (FK)
-  `elenco_principal_nomes` TEXT NULL, -- Lista de Atores como texto
-  `poster_url` VARCHAR(255) NULL,
-  `trailer_url` VARCHAR(255) NULL,
+CREATE TABLE `conteudo` (
+  `id_conteudo` int NOT NULL AUTO_INCREMENT,
+  `tmdb_id` int DEFAULT NULL,
+  `tipo` enum('Filme','Serie') NOT NULL,
+  `nome` varchar(255) NOT NULL,
+  `sinopse` text,
+  `duracao_minutos` int DEFAULT NULL,
+  `ano_lancamento` year DEFAULT NULL,
+  `nome_diretor` varchar(150) DEFAULT NULL,
+  `id_genero` int DEFAULT NULL,
+  `elenco_principal_nomes` text,
+  `poster_url` varchar(255) DEFAULT NULL,
+  `trailer_url` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_conteudo`),
-  FOREIGN KEY (`id_genero`) REFERENCES `Generos`(`id_genero`)
-    ON DELETE SET NULL
-    ON UPDATE CASCADE
-);
+  UNIQUE KEY `tmdb_id` (`tmdb_id`),
+  KEY `id_genero` (`id_genero`),
+  CONSTRAINT `conteudo_ibfk_1` FOREIGN KEY (`id_genero`) REFERENCES `generos` (`id_genero`) ON DELETE SET NULL ON UPDATE CASCADE
+) 
 
-CREATE TABLE `Reviews` (
-  `id_review` INT NOT NULL AUTO_INCREMENT,
-  `id_utilizador` INT NOT NULL,
-  `id_conteudo` INT NOT NULL,
-  `data_review` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `classificacao` TINYINT NOT NULL CHECK (`classificacao` BETWEEN 1 AND 10),
-  `critica` TEXT NULL,
-  `contador_utilidade` INT NOT NULL DEFAULT 0, -- Votos de Utilidade
-  PRIMARY KEY (`id_review`),
-  FOREIGN KEY (`id_utilizador`) REFERENCES `Utilizadores`(`id_utilizador`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  FOREIGN KEY (`id_conteudo`) REFERENCES `Conteudo`(`id_conteudo`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  UNIQUE KEY `uk_user_content_review` (`id_utilizador`, `id_conteudo`)
-);
+CREATE TABLE `favoritos` (
+  `id_utilizador` int NOT NULL,
+  `id_conteudo` int NOT NULL,
+  `data_adicionado` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_utilizador`,`id_conteudo`),
+  KEY `id_conteudo` (`id_conteudo`),
+  CONSTRAINT `favoritos_ibfk_1` FOREIGN KEY (`id_utilizador`) REFERENCES `utilizadores` (`id_utilizador`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `favoritos_ibfk_2` FOREIGN KEY (`id_conteudo`) REFERENCES `conteudo` (`id_conteudo`) ON DELETE CASCADE ON UPDATE CASCADE
+)
 
-CREATE TABLE `Favoritos` (
-  `id_utilizador` INT NOT NULL,
-  `id_conteudo` INT NOT NULL,
-  `data_adicionado` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_utilizador`, `id_conteudo`),
-  FOREIGN KEY (`id_utilizador`) REFERENCES `Utilizadores`(`id_utilizador`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  FOREIGN KEY (`id_conteudo`) REFERENCES `Conteudo`(`id_conteudo`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
+CREATE TABLE `generos` (
+  `id_genero` int NOT NULL AUTO_INCREMENT,
+  `nome_genero` varchar(50) NOT NULL,
+  PRIMARY KEY (`id_genero`),
+  UNIQUE KEY `nome_genero` (`nome_genero`)
+)
 
-CREATE TABLE `Listas_Personalizadas` (
-  `id_lista` INT NOT NULL AUTO_INCREMENT,
-  `id_utilizador` INT NOT NULL,
-  `nome_lista` VARCHAR(100) NOT NULL,
-  `descricao` TEXT NULL,
+CREATE TABLE `lista_conteudos` (
+  `id_lista` int NOT NULL,
+  `id_conteudo` int NOT NULL,
+  `ordem` int NOT NULL,
+  PRIMARY KEY (`id_lista`,`id_conteudo`),
+  KEY `id_conteudo` (`id_conteudo`),
+  CONSTRAINT `lista_conteudos_ibfk_1` FOREIGN KEY (`id_lista`) REFERENCES `listas_personalizadas` (`id_lista`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `lista_conteudos_ibfk_2` FOREIGN KEY (`id_conteudo`) REFERENCES `conteudo` (`id_conteudo`) ON DELETE CASCADE ON UPDATE CASCADE
+)
+
+CREATE TABLE `listas_personalizadas` (
+  `id_lista` int NOT NULL AUTO_INCREMENT,
+  `id_utilizador` int NOT NULL,
+  `nome_lista` varchar(100) NOT NULL,
+  `descricao` text,
   PRIMARY KEY (`id_lista`),
-  FOREIGN KEY (`id_utilizador`) REFERENCES `Utilizadores`(`id_utilizador`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
+  KEY `id_utilizador` (`id_utilizador`),
+  CONSTRAINT `listas_personalizadas_ibfk_1` FOREIGN KEY (`id_utilizador`) REFERENCES `utilizadores` (`id_utilizador`) ON DELETE CASCADE ON UPDATE CASCADE
+)
 
-CREATE TABLE `Lista_Conteudos` (
-  `id_lista` INT NOT NULL,
-  `id_conteudo` INT NOT NULL,
-  `ordem` INT NOT NULL,
-  PRIMARY KEY (`id_lista`, `id_conteudo`),
-  FOREIGN KEY (`id_lista`) REFERENCES `Listas_Personalizadas`(`id_lista`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  FOREIGN KEY (`id_conteudo`) REFERENCES `Conteudo`(`id_conteudo`)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
+CREATE TABLE `reviews` (
+  `id_review` int NOT NULL AUTO_INCREMENT,
+  `id_utilizador` int NOT NULL,
+  `id_conteudo` int NOT NULL,
+  `data_review` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `classificacao` tinyint NOT NULL,
+  `critica` text,
+  `contador_utilidade` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_review`),
+  UNIQUE KEY `uk_user_content_review` (`id_utilizador`,`id_conteudo`),
+  KEY `id_conteudo` (`id_conteudo`),
+  CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`id_utilizador`) REFERENCES `utilizadores` (`id_utilizador`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`id_conteudo`) REFERENCES `conteudo` (`id_conteudo`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `reviews_chk_1` CHECK ((`classificacao` between 1 and 10))
+)
+
+CREATE TABLE `utilizadores` (
+  `id_utilizador` int NOT NULL AUTO_INCREMENT,
+  `nome_utilizador` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `senha` varchar(255) NOT NULL,
+  `data_registo` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_admin` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_utilizador`),
+  UNIQUE KEY `email` (`email`)
+)
