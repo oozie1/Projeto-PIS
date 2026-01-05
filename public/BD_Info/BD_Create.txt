@@ -88,5 +88,3 @@ CREATE TABLE `reviews` (
 
 INSERT INTO `Utilizadores` (`nome_utilizador`, `email`, `password_hash`, `is_admin`) 
 VALUES ('Admin', 'admin@pis.pt', '123', TRUE);
-
-INSERT INTO `Generos` (`nome_genero`) VALUES ('Ação'), ('Comédia'), ('Drama'), ('Terror'), ('Ficção Científica');
