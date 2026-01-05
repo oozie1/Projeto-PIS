@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createNewConnection } = require('../BD_Info/db.js'); 
+const { createNewConnection } = require('../BD_Info/db'); 
 
 router.get('/login', (req, res) => {
     res.render('login');

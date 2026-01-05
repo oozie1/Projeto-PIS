@@ -17,21 +17,20 @@ router.post('/favoritos', checkAuth, (req, res) => {
     connection.connect();
 
     const checkSql = 'SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?';
-    
+
     connection.query(checkSql, [tmdb_id], (err, results) => {
-        if (err) { 
-    console.error("ERRO MYSQL:", err); // <--- Isto vai mostrar o erro no terminal
-    console.log("DADOS RECEBIDOS:", req.body); // <--- Isto confirma se os dados chegaram
-    connection.end(); 
-    return res.send("Erro BD ao verificar filme: " + err.message); // Mostra o erro na tela também
-}
+        if (err) {
+            connection.end();
+            console.error(err);
+            return res.send("Erro BD ao verificar filme: ");
+        }
 
         const insertFavorito = (idCont) => {
             const favSql = 'INSERT INTO Favoritos (id_utilizador, id_conteudo) VALUES (?, ?)';
             connection.query(favSql, [id_utilizador, idCont], (err, result) => {
                 connection.end();
                 if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') return res.send("<script>alert('Já tinhas este favorito!'); window.history.back();</script>");
+                    if (err.code === 'ER_DUP_ENTRY') return res.send("<script>alert('Já está nos Favoritos!'); window.history.back();</script>");
                     return res.send("Erro ao adicionar favorito.");
                 }
                 res.send("<script>alert('Adicionado aos favoritos!'); window.history.back();</script>");
@@ -43,9 +42,9 @@ router.post('/favoritos', checkAuth, (req, res) => {
         } else {
             const insertMovieSql = 'INSERT INTO Conteudo (tipo, nome, poster_url, tmdb_id) VALUES (?, ?, ?, ?)';
             connection.query(insertMovieSql, [tipo, titulo, poster, tmdb_id], (err, result) => {
-                if (err) { 
-                    connection.end(); 
-                    return res.send("Erro ao importar filme."); 
+                if (err) {
+                    connection.end();
+                    return res.send("Erro ao importar filme.");
                 }
                 insertFavorito(result.insertId);
             });
