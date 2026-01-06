@@ -4,121 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= movie.title %> - Detalhes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 40px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 40px; }
         a { text-decoration: none; color: #f5c518; transition: 0.2s; }
-        a:hover { color: #fff; }
-        .nav-back { display: inline-block; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem; }
-        .movie-container { display: flex; gap: 40px; max-width: 1200px; margin: 0 auto; background: #1e1e1e; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .poster-wrapper { flex-shrink: 0; }
-        .poster { width: 300px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-        .info { flex-grow: 1; }
-        h1 { margin-top: 0; color: #fff; font-size: 2.5rem; }
-        .meta-info { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
-        .overview { line-height: 1.6; margin-bottom: 30px; }
-        .rating { color: #f5c518; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; display: inline-block; background: #333; padding: 5px 10px; border-radius: 5px; }
-        .actions-panel { background-color: #252525; padding: 25px; border-radius: 10px; border: 1px solid #333; margin-top: 30px; }
-        .actions-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        form { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #ccc; }
         
-        input[type="number"], textarea { width: 100%; padding: 12px; background-color: #333; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; font-family: inherit; box-sizing: border-box; }
-        input:focus, textarea:focus { outline: none; border-color: #f5c518; }
+        .movie-header { max-width: 1000px; margin: 0 auto 40px auto; display: flex; gap: 40px; align-items: flex-start; }
+        .poster { width: 300px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .info-section { flex: 1; padding-top: 10px; }
 
-        .input-group {
+        h1 { margin: 0 0 10px 0; color: #fff; font-size: 3rem; line-height: 1.1; font-weight: 700; }
+        .year { font-weight: 300; color: #888; font-size: 2rem; }
+        .meta-tags { color: #aaa; margin-bottom: 25px; font-size: 0.95rem; display: flex; gap: 15px; align-items: center; }
+        .tag { background: #222; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; }
+
+        
+        .action-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 30px; }
+        .icon-form { display: inline-block; }
+        
+        .btn-icon { 
+            background: none; border: none; cursor: pointer; 
+            font-size: 2rem; 
+            color: #555; 
+            transition: transform 0.2s ease;
+            padding: 5px;
+        }
+        .btn-icon:hover { transform: scale(1.15); }
+
+        .btn-icon.heart:hover { color: #e21c3c; }
+        .btn-icon.heart.active { color: #e21c3c; } 
+        
+        .btn-icon.eye:hover { color: #f5c518; }
+        .btn-icon.eye.active { color: #f5c518; }
+
+        .rating-badge { margin-left: auto; font-size: 1.2rem; font-weight: bold; color: #fff; }
+
+        .review-section { max-width: 1000px; margin: 0 auto; border-top: 1px solid #333; padding-top: 30px; }
+        
+        .star-rating-container {
             display: flex;
-            gap: 10px;
-            align-items: center;
+            gap: 5px;
             margin-bottom: 15px;
+            cursor: pointer;
         }
-        .input-group input[type="number"] {
-            width: 80px; 
-            margin-bottom: 0;
-            text-align: center;
+        .star-item {
+            font-size: 1.5rem;
+            color: #444; 
+            transition: color 0.2s;
         }
-        .input-group .btn {
-            padding: 11px 20px;
-        }
+        .star-item.selected { color: #f5c518; } 
+        .star-item:hover { color: #fff; }
 
-        .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; font-size: 1rem; transition: transform 0.2s; display: inline-block; }
-        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-        .btn-primary { background-color: #f5c518; color: #000; }
-        .btn-secondary { background-color: #444; color: #fff; border: 1px solid #555; }
-        .btn-fav { background-color: #e21c3c; color: white; width: 100%; }
-        .login-warning { background: #333; padding: 15px; border-radius: 5px; text-align: center; color: #aaa; }
+       
+        textarea { 
+            background: #1e1e1e; border: 1px solid #333; color: white; 
+            padding: 15px; border-radius: 8px; width: 100%; box-sizing: border-box; resize: vertical;
+            font-family: inherit; margin-bottom: 15px;
+        }
+        textarea:focus { outline: none; border-color: #f5c518; }
         
+        .btn-yellow { 
+            background-color: #f5c518; color: #000; 
+            border: none; padding: 12px 30px; border-radius: 8px; 
+            font-weight: 700; cursor: pointer; font-size: 1rem; width: 100%;
+            transition: 0.2s; 
+        }
+        .btn-yellow:hover { background-color: #ffdb4d; transform: translateY(-2px); }
+
         @media (max-width: 768px) {
-            .movie-container { flex-direction: column; align-items: center; }
-            .poster { width: 100%; max-width: 300px; }
-            .info { width: 100%; }
+            .movie-header { flex-direction: column; align-items: center; text-align: center; }
+            .poster { width: 200px; margin-bottom: 20px; }
+            .action-bar { justify-content: center; }
+            .star-rating-container { justify-content: center; }
         }
     </style>
 </head>
 <body>
 
-    <a href="/" class="nav-back">⬅ Voltar à Página Inicial</a>
+    <a href="/" style="display:inline-block; margin-bottom: 20px; font-weight:600;">&larr; Voltar</a>
 
-    <div class="movie-container">
-        <div class="poster-wrapper">
-            <% if (movie.poster_path) { %>
-                <img class="poster" src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
-            <% } else { %>
-                <img class="poster" src="https://via.placeholder.com/300x450?text=Sem+Imagem" alt="Sem Imagem">
-            <% } %>
-        </div>
+    <div class="movie-header">
+        <% if (movie.poster_path) { %>
+            <img class="poster" src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
+        <% } else { %>
+            <img class="poster" src="https://via.placeholder.com/300x450" alt="Sem Imagem">
+        <% } %>
 
-        <div class="info">
-            <h1><%= movie.title %> <span style="font-weight:normal; font-size: 1.5rem; color:#888;">(<%= movie.release_date ? movie.release_date.split('-')[0] : 'N/A' %>)</span></h1>
+        <div class="info-section">
+            <h1><%= movie.title %> <span class="year"><%= movie.release_date ? movie.release_date.split('-')[0] : '' %></span></h1>
             
-            <div class="rating">★ <%= movie.vote_average.toFixed(1) %> / 10</div>
+            <div class="meta-tags">
+                <% movie.genres.slice(0, 3).forEach(g => { %>
+                    <span class="tag"><%= g.name %></span>
+                <% }) %>
+                <span><%= movie.runtime ? movie.runtime + ' min' : 'N/A' %></span>
+            </div>
 
-            <p class="meta-info">
-                <strong>Géneros:</strong> <%= movie.genres.map(g => g.name).join(', ') %>
+            <p style="line-height: 1.6; color: #ccc; margin-bottom: 30px;">
+                <%= movie.overview || "Sem sinopse disponível." %>
             </p>
 
-            <p class="overview"><%= movie.overview || "Sem sinopse disponível." %></p>
-
-            <% if (user) { %>
-                <div class="actions-panel">
-                    <h3>Ações</h3>
-                    
-                    <form action="/api/conteudo/favoritos" method="POST">
+            <div class="action-bar">
+                <% if (user) { %>
+                    <form action="/api/conteudo/favoritos" method="POST" class="icon-form">
                         <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
                         <input type="hidden" name="titulo" value="<%= movie.title %>">
                         <input type="hidden" name="poster" value="<%= movie.poster_path %>">
                         <input type="hidden" name="tipo" value="Filme"> 
-                        <button type="submit" class="btn btn-fav">Adicionar aos Favoritos</button>
-                    </form>
-
-                    <form action="/api/conteudo/review" method="POST">
-                        <h4 style="margin-bottom: 10px;">A tua avaliação:</h4>
-                        <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
-                        <input type="hidden" name="titulo" value="<%= movie.title %>">
-                        <input type="hidden" name="poster" value="<%= movie.poster_path %>">
-                        <input type="hidden" name="tipo" value="Filme">
                         
-                        <label>Nota (1-10):</label>
-                        <div class="input-group">
-                            <input type="number" name="classificacao" min="1" max="10" 
-                                value="<%= (typeof userReview !== 'undefined' && userReview) ? userReview.classificacao : '' %>" required>
-                            <button type="submit" class="btn btn-secondary">Guardar Nota</button>
-                        </div>
-                        
-                        <label>A tua opinião (Opcional se quiseres apenas dar nota):</label>
-                        <textarea name="critica" placeholder="Escreve aqui o que achaste..." rows="4"><%= (typeof userReview !== 'undefined' && userReview) ? userReview.critica : '' %></textarea>
-                        
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            <%= (typeof userReview !== 'undefined' && userReview) ? 'Atualizar Review' : 'Publicar Review' %>
+                        <button type="submit" class="btn-icon heart <%= (typeof isFavorito !== 'undefined' && isFavorito) ? 'active' : '' %>" title="Favoritos">
+                            <i class="<%= (typeof isFavorito !== 'undefined' && isFavorito) ? 'fa-solid' : 'fa-regular' %> fa-heart"></i>
                         </button>
                     </form>
+
+                    <form action="/api/conteudo/vistos" method="POST" class="icon-form">
+                        <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                        <input type="hidden" name="titulo" value="<%= movie.title %>">
+                        
+                        <button type="submit" class="btn-icon eye" title="Marcar como Visto">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </form>
+                <% } %>
+                
+                <div class="rating-badge">
+                    <i class="fa-solid fa-star" style="color:#f5c518"></i> <%= movie.vote_average.toFixed(1) %>
                 </div>
-            <% } else { %>
-                <div class="actions-panel login-warning">
-                    <p>Queres guardar nos favoritos ou deixar review? <br> Faz <a href="/auth/login">Login</a> ou <a href="/auth/register">Registo</a>.</p>
-                </div>
-            <% } %>
+            </div>
         </div>
     </div>
+
+    <div class="review-section">
+        <% if (user) { %>
+            <h3 style="color: #fff; margin-bottom: 20px;">A tua Avaliação</h3>
+            
+            <form action="/api/conteudo/review" method="POST">
+                <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                <input type="hidden" name="titulo" value="<%= movie.title %>">
+                <input type="hidden" name="poster" value="<%= movie.poster_path %>">
+                <input type="hidden" name="tipo" value="Filme">
+                
+                <input type="hidden" id="ratingInput" name="classificacao" 
+                       value="<%= (typeof userReview !== 'undefined' && userReview) ? userReview.classificacao : '' %>">
+
+                <div class="star-rating-container" id="starContainer">
+                    <% for(let i=1; i<=10; i++) { %>
+                        <i class="fa-star fa-regular star-item" data-value="<%= i %>"></i>
+                    <% } %>
+                </div>
+
+                <textarea name="critica" placeholder="Escreve aqui a tua opinião... (Opcional)" rows="3"><%= (typeof userReview !== 'undefined' && userReview) ? userReview.critica : '' %></textarea>
+                
+                <button type="submit" class="btn-yellow">
+                    <%= (typeof userReview !== 'undefined' && userReview) ? 'Atualizar Review' : 'Guardar Review' %>
+                </button>
+            </form>
+        <% } else { %>
+            <p style="text-align:center; color:#666;">Faz login para avaliar este filme.</p>
+        <% } %>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const stars = document.querySelectorAll('.star-item');
+            const input = document.getElementById('ratingInput');
+            
+            function fillStars(value) {
+                stars.forEach(star => {
+                    const starValue = parseInt(star.getAttribute('data-value'));
+                    if (starValue <= value) {
+                        star.classList.remove('fa-regular');
+                        star.classList.add('fa-solid', 'selected'); 
+                    } else {
+                        star.classList.remove('fa-solid', 'selected');
+                        star.classList.add('fa-regular');
+                    }
+                });
+            }
+
+            
+            if (input && input.value) {
+                fillStars(input.value);
+            }
+
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    input.value = value;
+                    fillStars(value); 
+                });
+
+                // Opcional: Efeito hover (se quiseres que pinte ao passar o rato)
+                /*
+                star.addEventListener('mouseover', function() {
+                    fillStars(this.getAttribute('data-value'));
+                });
+                star.addEventListener('mouseout', function() {
+                    fillStars(input.value || 0); // Volta ao valor selecionado ou 0
+                });
+                */
+            });
+        });
+    </script>
 
 </body>
 </html>

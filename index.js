@@ -35,82 +35,157 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/api/conteudo', conteudoRoutes);
 
+
 app.get('/', async (req, res) => {
     try {
-        const response = await axios.get(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=pt-PT`);
-        const movies = response.data.results;
-        res.render('index', { movies, imageBaseUrl: IMAGE_BASE_URL });
+        const [trendingReq, popularReq, topRatedReq, discoveryReq] = await Promise.all([
+            axios.get(`${BASE_URL}/trending/movie/day?api_key=${API_KEY}&language=pt-PT`),
+            axios.get(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=pt-PT`),
+            axios.get(`${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=pt-PT`),
+            axios.get(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=pt-PT&sort_by=popularity.desc&include_adult=false&page=2`)
+        ]);
+
+        res.render('index', { 
+            trendingMovies: trendingReq.data.results,
+            popularMovies: popularReq.data.results,
+            topRatedMovies: topRatedReq.data.results,
+            discoveryMovies: discoveryReq.data.results, 
+            imageBaseUrl: IMAGE_BASE_URL,
+            movies: [] 
+        });
+
     } catch (error) {
-        console.error("Erro API TMDB:", error.message);
-        res.render('index', { movies: [], imageBaseUrl: IMAGE_BASE_URL });
+        console.error("Erro API TMDB na Home:", error.message);
+        res.render('index', { 
+            trendingMovies: [], 
+            popularMovies: [], 
+            topRatedMovies: [], 
+            discoveryMovies: [], 
+            imageBaseUrl: IMAGE_BASE_URL, 
+            movies: [] 
+        });
     }
 });
+
+
+app.get('/search', async (req, res) => {
+    const query = req.query.q;
+    try {
+        const response = await axios.get(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&language=pt-PT`);
+        
+        res.render('index', { 
+            movies: response.data.results,
+            imageBaseUrl: IMAGE_BASE_URL,
+            trendingMovies: [], popularMovies: [], topRatedMovies: [], discoveryMovies: []
+        });
+
+    } catch (error) {
+        console.error("Erro na Pesquisa:", error.message);
+        res.redirect('/'); 
+    }
+});
+
 
 app.get('/movie/:id', async (req, res) => {
     const movieId = req.params.id;
 
     try {
-        // 1. get dados do filme à API 
         const response = await axios.get(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=pt-PT&append_to_response=credits`);
         const movie = response.data;
         
-        // 2. Preparar variável da review (começa vazia)
         let userReview = null;
+        let isFavorito = false; 
 
-        // 3. Verificar se o user está logado
         if (req.session.user) {
             const connection = createNewConnection();
             connection.connect();
+            const userId = req.session.user.id_utilizador;
 
-            // SQL: Procura review na tabela Reviews ligando com Conteudo pelo tmdb_id
-            const sql = `
+            const sqlReview = `
                 SELECT r.classificacao, r.critica 
                 FROM Reviews r
                 JOIN Conteudo c ON r.id_conteudo = c.id_conteudo
                 WHERE c.tmdb_id = ? AND r.id_utilizador = ?
             `;
 
-            connection.query(sql, [movieId, req.session.user.id_utilizador], (err, results) => {
-                connection.end(); 
-
-                if (!err && results.length > 0) {
-                    userReview = results[0]; // Guarda a review encontrada
+            connection.query(sqlReview, [movieId, userId], (err, resultsReview) => {
+                if (!err && resultsReview.length > 0) {
+                    userReview = resultsReview[0];
                 }
 
-                // 4A. Renderiza a página JÁ com a review (se existir)
-                res.render('movies', { 
-                    movie, 
-                    imageBaseUrl: IMAGE_BASE_URL,
-                    userReview: userReview // Enviamos a review para o HTML
+                const sqlFav = `
+                    SELECT f.id_favoritos 
+                    FROM Favoritos f
+                    JOIN Conteudo c ON f.id_conteudo = c.id_conteudo
+                    WHERE c.tmdb_id = ? AND f.id_utilizador = ?
+                `;
+
+                connection.query(sqlFav, [movieId, userId], (errFav, resultsFav) => {
+                    connection.end(); 
+
+                    if (!errFav && resultsFav.length > 0) {
+                        isFavorito = true;
+                    }
+
+                    res.render('movies', { 
+                        movie, 
+                        imageBaseUrl: IMAGE_BASE_URL,
+                        userReview: userReview,
+                        isFavorito: isFavorito
+                    });
                 });
             });
 
         } else {
-            // 4B. Se não estiver logado, renderiza sem review
             res.render('movies', { 
                 movie, 
                 imageBaseUrl: IMAGE_BASE_URL,
-                userReview: null 
+                userReview: null,
+                isFavorito: false
             });
         }
 
     } catch (error) {
-        console.error("Erro detalhes:", error.message);
+        console.error("Erro detalhes filme:", error.message);
         res.redirect('/');
     }
 });
 
-app.get('/search', async (req, res) => {
-    const query = req.query.q;
-    try {
-        const response = await axios.get(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&language=pt-PT`);
-        const movies = response.data.results;
-        res.render('index', { movies, imageBaseUrl: IMAGE_BASE_URL });
-    } catch (error) {
-        console.error("Erro pesquisa:", error.message);
-        res.send("Erro na pesquisa.");
+
+app.get('/perfil', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/auth/login');
     }
+
+    const connection = createNewConnection();
+    connection.connect();
+
+
+    const sql = `
+        SELECT c.id_conteudo, c.nome, c.poster_url, c.tmdb_id
+        FROM Favoritos f
+        JOIN Conteudo c ON f.id_conteudo = c.id_conteudo
+        WHERE f.id_utilizador = ?
+    `;
+
+    connection.query(sql, [req.session.user.id_utilizador], (err, results) => {
+        connection.end();
+
+        if (err) {
+            console.error("Erro ao buscar favoritos:", err);
+            return res.render('perfil', { 
+                user: req.session.user, 
+                favoritos: [] 
+            });
+        }
+
+        res.render('perfil', { 
+            user: req.session.user, 
+            favoritos: results 
+        });
+    });
 });
+
 
 app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}`);

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { createNewConnection } = require('../BD_Info/db'); 
 
-// encriptar password
 const bcrypt = require('bcrypt');
 const saltRounds = 10; 
 
