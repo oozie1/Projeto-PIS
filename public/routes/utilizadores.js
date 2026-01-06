@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { createNewConnection } = require('../BD_Info/db'); 
 
+// encriptar password
+const bcrypt = require('bcrypt');
+const saltRounds = 10; 
+
 router.get('/login', (req, res) => {
     res.render('login');
 });
@@ -50,18 +54,28 @@ router.post('/register', (req, res) => {
     const connection = createNewConnection();
     connection.connect();
 
-    const sql = 'INSERT INTO Utilizadores (nome_utilizador, email, password_hash) VALUES (?, ?, ?)';
-    
-    connection.query(sql, [nome, email, senha], (err, result) => {
-
+    bcrypt.hash(senha, saltRounds, (err, hash) => {
         if (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.send('<script>alert("Este email já está registado!"); window.history.back();</script>');
-            }
-            console.error(err);
-            return res.status(500).send("Erro interno ao criar conta.");
+            connection.end(); 
+            console.error("Erro no bcrypt:", err);
+            return res.status(500).send("Erro ao processar a senha.");
         }
-        res.redirect('/auth/login');
+
+        const sql = 'INSERT INTO Utilizadores (nome_utilizador, email, password_hash) VALUES (?, ?, ?)';
+        
+        connection.query(sql, [nome, email, hash], (dbErr, result) => {
+            connection.end(); 
+
+            if (dbErr) {
+                if (dbErr.code === 'ER_DUP_ENTRY') {
+                    return res.send('<script>alert("Este email já está registado!"); window.history.back();</script>');
+                }
+                console.error(dbErr);
+                return res.status(500).send("Erro interno ao criar conta.");
+            }
+
+            res.redirect('/auth/login');
+        });
     });
 });
 
@@ -71,20 +85,40 @@ router.post('/login', (req, res) => {
     const connection = createNewConnection();
     connection.connect();
 
-    const sql = "SELECT * FROM utilizadores WHERE email = ? AND password_hash = ?";
+    // 1. MUDANÇA: Buscamos apenas pelo email, sem testar a senha no SQL
+    const sql = "SELECT * FROM Utilizadores WHERE email = ?";
     
-    connection.query(sql, [email, senha], (err, results) => {
-        connection.end();
+    connection.query(sql, [email], (err, results) => {
+        connection.end(); // Fechamos a conexão logo aqui
 
         if (err) {
+            console.error("Erro na BD:", err);
             return res.send("Erro interno do servidor.");
         }
-        if (results.length > 0) {
-            req.session.user = results[0]; 
-            res.redirect('/'); 
-        } else {
-            res.render('login', { mensagem: 'Email ou senha incorretos!' });
+
+        // 2. Se não encontrou nenhum email igual
+        if (results.length === 0) {
+            return res.render('login', { mensagem: 'Email ou senha incorretos!' });
         }
+
+        const user = results[0];
+
+        // 3. AGORA COMPARAMOS A SENHA (USANDO BCRYPT)
+        // O primeiro argumento é a senha que o user escreveu (texto puro)
+        // O segundo é a senha que veio da base de dados (o hash encriptado)
+        bcrypt.compare(senha, user.password_hash, (bcryptErr, isMatch) => {
+            if (bcryptErr) {
+                console.error("Erro no bcrypt:", bcryptErr);
+                return res.send("Erro ao verificar credenciais.");
+            }
+
+            if (isMatch) {
+                req.session.user = user; 
+                res.redirect('/'); 
+            } else {
+                res.render('login', { mensagem: 'Email ou senha incorretos!' });
+            }
+        });
     });
 });
 

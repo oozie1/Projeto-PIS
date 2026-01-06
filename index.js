@@ -4,8 +4,9 @@ const axios = require('axios');
 const path = require('path');
 const session = require('express-session');
 
+const { createNewConnection } = require('./public/BD_Info/db'); 
+
 const authRoutes = require('./public/routes/utilizadores');
-const generosRoutes = require('./public/routes/generos');
 const conteudoRoutes = require('./public/routes/conteudo');
 
 const app = express();
@@ -31,7 +32,6 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api/generos', generosRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/conteudo', conteudoRoutes);
 
@@ -48,10 +48,52 @@ app.get('/', async (req, res) => {
 
 app.get('/movie/:id', async (req, res) => {
     const movieId = req.params.id;
+
     try {
+        // 1. get dados do filme à API 
         const response = await axios.get(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&language=pt-PT&append_to_response=credits`);
         const movie = response.data;
-        res.render('movies', { movie, imageBaseUrl: IMAGE_BASE_URL });
+        
+        // 2. Preparar variável da review (começa vazia)
+        let userReview = null;
+
+        // 3. Verificar se o user está logado
+        if (req.session.user) {
+            const connection = createNewConnection();
+            connection.connect();
+
+            // SQL: Procura review na tabela Reviews ligando com Conteudo pelo tmdb_id
+            const sql = `
+                SELECT r.classificacao, r.critica 
+                FROM Reviews r
+                JOIN Conteudo c ON r.id_conteudo = c.id_conteudo
+                WHERE c.tmdb_id = ? AND r.id_utilizador = ?
+            `;
+
+            connection.query(sql, [movieId, req.session.user.id_utilizador], (err, results) => {
+                connection.end(); 
+
+                if (!err && results.length > 0) {
+                    userReview = results[0]; // Guarda a review encontrada
+                }
+
+                // 4A. Renderiza a página JÁ com a review (se existir)
+                res.render('movies', { 
+                    movie, 
+                    imageBaseUrl: IMAGE_BASE_URL,
+                    userReview: userReview // Enviamos a review para o HTML
+                });
+            });
+
+        } else {
+            // 4B. Se não estiver logado, renderiza sem review
+            res.render('movies', { 
+                movie, 
+                imageBaseUrl: IMAGE_BASE_URL,
+                userReview: null 
+            });
+        }
+
     } catch (error) {
         console.error("Erro detalhes:", error.message);
         res.redirect('/');

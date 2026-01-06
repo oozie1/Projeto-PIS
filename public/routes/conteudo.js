@@ -17,12 +17,12 @@ router.post('/favoritos', checkAuth, (req, res) => {
     connection.connect();
 
     const checkSql = 'SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?';
-
+    
     connection.query(checkSql, [tmdb_id], (err, results) => {
-        if (err) {
-            connection.end();
-            console.error(err);
-            return res.send("Erro BD ao verificar filme: ");
+        if (err) { 
+            connection.end(); 
+            console.error("ERRO MYSQL:", err);
+            return res.send("Erro ao verificar filme na base de dados."); 
         }
 
         const insertFavorito = (idCont) => {
@@ -30,7 +30,7 @@ router.post('/favoritos', checkAuth, (req, res) => {
             connection.query(favSql, [id_utilizador, idCont], (err, result) => {
                 connection.end();
                 if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') return res.send("<script>alert('Já está nos Favoritos!'); window.history.back();</script>");
+                    if (err.code === 'ER_DUP_ENTRY') return res.send("<script>alert('Já tinhas este favorito!'); window.history.back();</script>");
                     return res.send("Erro ao adicionar favorito.");
                 }
                 res.send("<script>alert('Adicionado aos favoritos!'); window.history.back();</script>");
@@ -42,9 +42,9 @@ router.post('/favoritos', checkAuth, (req, res) => {
         } else {
             const insertMovieSql = 'INSERT INTO Conteudo (tipo, nome, poster_url, tmdb_id) VALUES (?, ?, ?, ?)';
             connection.query(insertMovieSql, [tipo, titulo, poster, tmdb_id], (err, result) => {
-                if (err) {
-                    connection.end();
-                    return res.send("Erro ao importar filme.");
+                if (err) { 
+                    connection.end(); 
+                    return res.send("Erro ao importar filme."); 
                 }
                 insertFavorito(result.insertId);
             });
@@ -64,25 +64,31 @@ router.post('/review', checkAuth, (req, res) => {
     connection.query(checkSql, [tmdb_id], (err, results) => {
         if (err) {
             connection.end();
+            console.error(err);
             return res.send("Erro BD ao verificar filme");
         }
 
-        const insertReview = (idCont) => {
-            const reviewSql = 'INSERT INTO Reviews (id_utilizador, id_conteudo, classificacao, critica) VALUES (?, ?, ?, ?)';
+        const saveReview = (idCont) => {
+            const reviewSql = `
+                INSERT INTO Reviews (id_utilizador, id_conteudo, classificacao, critica) 
+                VALUES (?, ?, ?, ?) 
+                ON DUPLICATE KEY UPDATE 
+                classificacao = VALUES(classificacao), 
+                critica = VALUES(critica)
+            `;
+            
             connection.query(reviewSql, [id_utilizador, idCont, classificacao, critica], (err, result) => {
                 connection.end();
                 if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        return res.send("<script>alert('Já fizeste uma review a este filme!'); window.history.back();</script>");
-                    }
-                    return res.send("Erro ao adicionar review.");
+                    console.error(err);
+                    return res.send("Erro ao guardar review.");
                 }
-                res.send("<script>alert('Review adicionada com sucesso!'); window.history.back();</script>");
+                res.send("<script>alert('Review guardada/atualizada com sucesso!'); window.history.back();</script>");
             });
         };
 
         if (results.length > 0) {
-            insertReview(results[0].id_conteudo);
+            saveReview(results[0].id_conteudo);
         } else {
             const insertMovieSql = 'INSERT INTO Conteudo (tipo, nome, poster_url, tmdb_id) VALUES (?, ?, ?, ?)';
             connection.query(insertMovieSql, [tipo, titulo, poster, tmdb_id], (err, result) => {
@@ -90,7 +96,7 @@ router.post('/review', checkAuth, (req, res) => {
                     connection.end();
                     return res.send("Erro ao importar filme para review.");
                 }
-                insertReview(result.insertId);
+                saveReview(result.insertId);
             });
         }
     });

@@ -22,32 +22,28 @@
         form { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #ccc; }
         
-        /* ESTILOS GERAIS DE INPUT */
         input[type="number"], textarea { width: 100%; padding: 12px; background-color: #333; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; font-family: inherit; box-sizing: border-box; }
         input:focus, textarea:focus { outline: none; border-color: #f5c518; }
 
-        /* NOVA CLASSE PARA ALINHAR BOTÃO E INPUT */
         .input-group {
             display: flex;
-            gap: 10px; /* Espaço entre o input e o botão */
+            gap: 10px;
             align-items: center;
             margin-bottom: 15px;
         }
-        /* Ajusta o input dentro do grupo para ser pequeno */
         .input-group input[type="number"] {
             width: 80px; 
-            margin-bottom: 0; /* Remove a margem de baixo para alinhar com o botão */
+            margin-bottom: 0;
             text-align: center;
         }
-        /* Ajusta o botão dentro do grupo */
         .input-group .btn {
-            padding: 11px 20px; /* Ajuste fino da altura para combinar com o input */
+            padding: 11px 20px;
         }
 
         .btn { padding: 12px 24px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; font-size: 1rem; transition: transform 0.2s; display: inline-block; }
         .btn:hover { transform: translateY(-2px); opacity: 0.9; }
         .btn-primary { background-color: #f5c518; color: #000; }
-        .btn-secondary { background-color: #444; color: #fff; border: 1px solid #555; } /* Estilo para o novo botão */
+        .btn-secondary { background-color: #444; color: #fff; border: 1px solid #555; }
         .btn-fav { background-color: #e21c3c; color: white; width: 100%; }
         .login-warning { background: #333; padding: 15px; border-radius: 5px; text-align: center; color: #aaa; }
         
@@ -103,14 +99,17 @@
                         
                         <label>Nota (1-10):</label>
                         <div class="input-group">
-                            <input type="number" name="classificacao" min="1" max="10" required>
+                            <input type="number" name="classificacao" min="1" max="10" 
+                                value="<%= (typeof userReview !== 'undefined' && userReview) ? userReview.classificacao : '' %>" required>
                             <button type="submit" class="btn btn-secondary">Guardar Nota</button>
                         </div>
                         
                         <label>A tua opinião (Opcional se quiseres apenas dar nota):</label>
-                        <textarea name="critica" placeholder="Escreve aqui o que achaste..." rows="4"></textarea>
+                        <textarea name="critica" placeholder="Escreve aqui o que achaste..." rows="4"><%= (typeof userReview !== 'undefined' && userReview) ? userReview.critica : '' %></textarea>
                         
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Publicar Review Completa</button>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <%= (typeof userReview !== 'undefined' && userReview) ? 'Atualizar Review' : 'Publicar Review' %>
+                        </button>
                     </form>
                 </div>
             <% } else { %>
