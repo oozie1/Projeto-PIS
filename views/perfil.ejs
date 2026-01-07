@@ -18,7 +18,7 @@
         </div>
         <div>
             <a href="/" class="btn-home">Voltar ao Início</a>
-            <a href="/auth/logout" class="btn-logout">Sair</a>
+            <a href="/auth/logout" class="btn-logout">Terminar Sessão</a>
         </div>
     </header>
 
@@ -106,7 +106,7 @@
             <div class="grid">
                 <% favoritos.forEach(filme => { %>
                     <div class="card">
-                        <a href="/details/<%= (filme.tipo === 'Serie' ? 'tv' : 'movie') %>/<%= filme.tmdb_id %>">
+                        <a href="/details/<%= (filme.tipo === 'Serie' ? 'tv' : 'movie') %>/<%= filme.tmdb_id %>?origin=perfil">
                             <img src="https://image.tmdb.org/t/p/w300<%= filme.poster_url %>" alt="<%= filme.nome %>">
                             <div class="info">
                                 <h4><%= filme.nome %></h4>
@@ -122,6 +122,27 @@
             </div>
         <% } %>
 
+        <h2 style="border-left: 5px solid #2ecc71; padding-left: 15px; margin-bottom: 25px; margin-top: 50px;">Histórico de Visualizações</h2>
+        
+        <% if (typeof vistos !== 'undefined' && vistos.length > 0) { %>
+            <div class="grid">
+                <% vistos.forEach(filme => { %>
+                    <div class="card">
+                        <a href="/details/<%= (filme.tipo === 'Serie' ? 'tv' : 'movie') %>/<%= filme.tmdb_id %>?origin=perfil">
+                            <img src="https://image.tmdb.org/t/p/w300<%= filme.poster_url %>" alt="<%= filme.nome %>">
+                            <div class="info">
+                                <h4><%= filme.nome %></h4>
+                            </div>
+                        </a>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="empty-state">
+                <p>Ainda não marcaste nenhum filme como visto.</p>
+            </div>
+        <% } %>
+
         <div class="section-header" style="margin-top: 50px;">
             <h2>As Minhas Listas</h2>
             <button class="btn-action btn-create" onclick="openModal('newListModal')">+ Criar Nova Lista</button>
@@ -131,6 +152,7 @@
             <div class="grid">
                 <% listas.forEach(lista => { %>
                     <div class="card" style="padding: 20px; text-align: center; position: relative;">
+                        
                         <form action="/api/listas/apagar/<%= lista.id_lista %>" method="POST" onsubmit="return confirm('Apagar lista <%= lista.nome_lista %>?');" style="position: absolute; top: 10px; right: 10px;">
                             <button type="submit" style="background:none; border:none; color: #e21c3c; cursor: pointer; font-size: 1.1rem;" title="Apagar Lista">
                                 <i class="fa-solid fa-trash"></i>
@@ -162,21 +184,21 @@
             </div>
         </div>
 
+        <div id="editListModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('editListModal')">&times;</span>
+                <h3 style="color: #f5c518;">Editar Nome da Lista</h3>
+                <form action="/api/listas/editar" method="POST">
+                    <input type="hidden" name="id_lista" id="editListId">
+                    <input type="text" name="novo_nome" id="editListName" required>
+                    <button type="submit" class="btn-action btn-create" style="width:100%; background: #f5c518; color: black; margin-top: 15px;">Guardar</button>
+                </form>
+            </div>
+        </div>
+
     <% } %>
 
-    <div id="editListModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('editListModal')">&times;</span>
-        <h3 style="color: #f5c518;">Editar Nome da Lista</h3>
-        <form action="/api/listas/editar" method="POST">
-            <input type="hidden" name="id_lista" id="editListId">
-            <input type="text" name="novo_nome" id="editListName" required>
-            <button type="submit" class="btn-action btn-create" style="width:100%; background: #f5c518; color: black;">Guardar</button>
-        </form>
-    </div>
-</div>
-
-    <script src="/public/js/perfil.js"></script>
+    <script src="/js/perfil.js"></script>
 
 </body>
 </html>

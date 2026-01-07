@@ -13,17 +13,21 @@ async function getDetailsAndRender(req, res, type, id) {
 
         let userReview = null;
         let isFavorito = false; 
+        let isVisto = false;
         let listasUsuario = []; 
         let publicReviews = [];
 
+        const origin = req.query.origin || null;
+
         const connection = createNewConnection();
+
         const sqlPublicReviews = `
             SELECT r.classificacao, r.critica, u.nome_utilizador 
             FROM Reviews r 
             JOIN Conteudo c ON r.id_conteudo = c.id_conteudo 
             JOIN Utilizadores u ON r.id_utilizador = u.id_utilizador 
             WHERE c.tmdb_id = ? 
-            ORDER BY r.id_review DESC`;
+            ORDER BY r.id_review DESC`; 
 
         connection.query(sqlPublicReviews, [id], (errPub, resultsPub) => {
             publicReviews = resultsPub || [];
@@ -36,19 +40,30 @@ async function getDetailsAndRender(req, res, type, id) {
                 connection.query(sqlReview, [id, userId], (err, resultsReview) => {
                     if (!err && resultsReview.length > 0) userReview = resultsReview[0];
 
-                    const sqlFav = "SELECT f.id_favoritos FROM Favoritos f JOIN Conteudo c ON f.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND f.id_utilizador = ?";
+                    const sqlFav = "SELECT count(*) as total FROM Favoritos f JOIN Conteudo c ON f.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND f.id_utilizador = ?";
+                    
                     connection.query(sqlFav, [id, userId], (errFav, resultsFav) => {
-                        if (!errFav && resultsFav.length > 0) isFavorito = true;
+                        if (!errFav && resultsFav[0].total > 0) {
+                            isFavorito = true; 
+                        }
 
-                        const sqlListas = "SELECT * FROM Listas_Personalizadas WHERE id_utilizador = ?";
-                        connection.query(sqlListas, [userId], (errList, resultsList) => {
-                            listasUsuario = resultsList || [];
-                            connection.end();
-                            
-                            res.render('movies', { 
-                                movie, imageBaseUrl: IMAGE_BASE_URL, 
-                                userReview, isFavorito, listasUsuario, 
-                                publicReviews
+                        const sqlVisto = "SELECT count(*) as total FROM Vistos v JOIN Conteudo c ON v.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND v.id_utilizador = ?";
+                        connection.query(sqlVisto, [id, userId], (errVisto, resultsVisto) => {
+                            if (!errVisto && resultsVisto[0].total > 0) {
+                                isVisto = true;
+                            }
+
+                            const sqlListas = "SELECT * FROM Listas_Personalizadas WHERE id_utilizador = ?";
+                            connection.query(sqlListas, [userId], (errList, resultsList) => {
+                                listasUsuario = resultsList || [];
+                                connection.end();
+                                
+                                res.render('movies', { 
+                                    movie, imageBaseUrl: IMAGE_BASE_URL, 
+                                    userReview, isFavorito, isVisto,
+                                    listasUsuario, publicReviews,
+                                    origin
+                                });
                             });
                         });
                     });
@@ -57,8 +72,8 @@ async function getDetailsAndRender(req, res, type, id) {
                 connection.end();
                 res.render('movies', { 
                     movie, imageBaseUrl: IMAGE_BASE_URL, 
-                    userReview: null, isFavorito: false, listasUsuario: [], 
-                    publicReviews
+                    userReview: null, isFavorito: false, isVisto: false, listasUsuario: [], 
+                    publicReviews, origin
                 });
             }
         });
@@ -166,9 +181,18 @@ exports.getTV = async (req, res) => {
 
 exports.redirectDetails = (req, res) => {
     const { type, id } = req.params;
-    if (type === 'movie') return res.redirect(`/movie/${id}`);
-    if (type === 'tv') return res.redirect(`/tv/${id}`);
-    res.redirect('/');
+    const origin = req.query.origin;
+    
+    let destination = '/';
+
+    if (type === 'movie') destination = `/movie/${id}`;
+    if (type === 'tv') destination = `/tv/${id}`;
+
+    if (origin) {
+        destination += `?origin=${origin}`;
+    }
+
+    res.redirect(destination);
 };
 
 exports.loadMore = async (req, res) => {

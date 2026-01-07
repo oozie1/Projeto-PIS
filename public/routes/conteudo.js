@@ -2,103 +2,119 @@ const express = require('express');
 const router = express.Router();
 const { createNewConnection } = require('../BD_Info/db');
 
-function checkAuth(req, res, next) {
-    if (!req.session.user) {
-        return res.status(401).send("Tens de fazer login primeiro!");
-    }
-    next();
+function redirectWithStatus(res, url, status) {
+    const separator = url.includes('?') ? '&' : '?';
+    res.redirect(url + separator + 'status=' + status);
 }
 
-router.post('/favoritos', checkAuth, (req, res) => {
-    const { tmdb_id, titulo, poster, tipo } = req.body;
-    const id_utilizador = req.session.user.id_utilizador;
-
-    const connection = createNewConnection();
-    connection.connect();
-
-    const checkSql = 'SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?';
+router.post('/favoritos', (req, res) => {
+    if (!req.session.user) return res.status(401).send("Faça login");
     
-    connection.query(checkSql, [tmdb_id], (err, results) => {
-        if (err) { 
-            connection.end(); 
-            console.error("ERRO MYSQL:", err);
-            return res.send("Erro ao verificar filme na base de dados."); 
-        }
+    const { tmdb_id, titulo, poster, tipo } = req.body;
+    const userId = req.session.user.id_utilizador;
+    const connection = createNewConnection();
+    const previousPage = req.header('Referer') || '/';
 
-        const insertFavorito = (idCont) => {
-            const favSql = 'INSERT INTO Favoritos (id_utilizador, id_conteudo) VALUES (?, ?)';
-            connection.query(favSql, [id_utilizador, idCont], (err, result) => {
+    const sqlConteudo = "INSERT IGNORE INTO Conteudo (tmdb_id, nome, poster_url, tipo) VALUES (?, ?, ?, ?)";
+    connection.query(sqlConteudo, [tmdb_id, titulo, poster, tipo || 'filme'], (err) => {
+        connection.query("SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?", [tmdb_id], (err, results) => {
+            if (results.length > 0) {
+                const id_conteudo = results[0].id_conteudo;
+
+                connection.query("SELECT * FROM Favoritos WHERE id_utilizador = ? AND id_conteudo = ?", [userId, id_conteudo], (err, favs) => {
+                    if (favs.length > 0) {
+                        connection.query("DELETE FROM Favoritos WHERE id_utilizador = ? AND id_conteudo = ?", [userId, id_conteudo], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'fav_removed');
+                        });
+                    } else {
+                        connection.query("INSERT INTO Favoritos (id_utilizador, id_conteudo) VALUES (?, ?)", [userId, id_conteudo], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'fav_added');
+                        });
+                    }
+                });
+            } else {
                 connection.end();
-                if (err) {
-                    if (err.code === 'ER_DUP_ENTRY') return res.send("<script>alert('Já tinhas este favorito!'); window.history.back();</script>");
-                    return res.send("Erro ao adicionar favorito.");
-                }
-                res.send("<script>alert('Adicionado aos favoritos!'); window.history.back();</script>");
-            });
-        };
-
-        if (results.length > 0) {
-            insertFavorito(results[0].id_conteudo);
-        } else {
-            const insertMovieSql = 'INSERT INTO Conteudo (tipo, nome, poster_url, tmdb_id) VALUES (?, ?, ?, ?)';
-            connection.query(insertMovieSql, [tipo, titulo, poster, tmdb_id], (err, result) => {
-                if (err) { 
-                    connection.end(); 
-                    return res.send("Erro ao importar filme."); 
-                }
-                insertFavorito(result.insertId);
-            });
-        }
+                res.redirect(previousPage);
+            }
+        });
     });
 });
 
-router.post('/review', checkAuth, (req, res) => {
+router.post('/vistos', (req, res) => {
+    if (!req.session.user) return res.status(401).send("Faça login");
+    
+    const { tmdb_id, titulo, poster, tipo } = req.body;
+    const userId = req.session.user.id_utilizador;
+    const connection = createNewConnection();
+    const previousPage = req.header('Referer') || '/';
+
+    const sqlConteudo = "INSERT IGNORE INTO Conteudo (tmdb_id, nome, poster_url, tipo) VALUES (?, ?, ?, ?)";
+    connection.query(sqlConteudo, [tmdb_id, titulo, poster, tipo || 'filme'], (err) => {
+        connection.query("SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?", [tmdb_id], (err, results) => {
+            if (results.length > 0) {
+                const id_conteudo = results[0].id_conteudo;
+
+                connection.query("SELECT * FROM Vistos WHERE id_utilizador = ? AND id_conteudo = ?", [userId, id_conteudo], (err, vistos) => {
+                    if (vistos.length > 0) {
+                        connection.query("DELETE FROM Vistos WHERE id_utilizador = ? AND id_conteudo = ?", [userId, id_conteudo], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'seen_removed');
+                        });
+                    } else {
+                        connection.query("INSERT INTO Vistos (id_utilizador, id_conteudo) VALUES (?, ?)", [userId, id_conteudo], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'seen_added');
+                        });
+                    }
+                });
+            } else {
+                connection.end();
+                res.redirect(previousPage);
+            }
+        });
+    });
+});
+
+router.post('/review', (req, res) => {
+    if (!req.session.user) return res.status(401).send("Faça login");
+
     const { tmdb_id, titulo, poster, tipo, classificacao, critica } = req.body;
-    const id_utilizador = req.session.user.id_utilizador;
+    const userId = req.session.user.id_utilizador;
+    const previousPage = req.header('Referer') || '/';
+    
+    if (!classificacao) return res.redirect(previousPage);
 
     const connection = createNewConnection();
-    connection.connect();
 
-    const checkSql = 'SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?';
+    const sqlConteudo = "INSERT IGNORE INTO Conteudo (tmdb_id, nome, poster_url, tipo) VALUES (?, ?, ?, ?)";
+    connection.query(sqlConteudo, [tmdb_id, titulo, poster, tipo || 'filme'], (err) => {
+        connection.query("SELECT id_conteudo FROM Conteudo WHERE tmdb_id = ?", [tmdb_id], (err, results) => {
+            if (results.length > 0) {
+                const id_conteudo = results[0].id_conteudo;
 
-    connection.query(checkSql, [tmdb_id], (err, results) => {
-        if (err) {
-            connection.end();
-            console.error(err);
-            return res.send("Erro BD ao verificar filme");
-        }
-
-        const saveReview = (idCont) => {
-            const reviewSql = `
-                INSERT INTO Reviews (id_utilizador, id_conteudo, classificacao, critica) 
-                VALUES (?, ?, ?, ?) 
-                ON DUPLICATE KEY UPDATE 
-                classificacao = VALUES(classificacao), 
-                critica = VALUES(critica)
-            `;
-            
-            connection.query(reviewSql, [id_utilizador, idCont, classificacao, critica], (err, result) => {
+                const checkSql = "SELECT id_review FROM Reviews WHERE id_utilizador = ? AND id_conteudo = ?";
+                connection.query(checkSql, [userId, id_conteudo], (err, reviews) => {
+                    if (reviews.length > 0) {
+                        const updateSql = "UPDATE Reviews SET classificacao = ?, critica = ?, data_review = NOW() WHERE id_review = ?";
+                        connection.query(updateSql, [classificacao, critica, reviews[0].id_review], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'review_updated');
+                        });
+                    } else {
+                        const insertSql = "INSERT INTO Reviews (id_utilizador, id_conteudo, classificacao, critica) VALUES (?, ?, ?, ?)";
+                        connection.query(insertSql, [userId, id_conteudo, classificacao, critica], () => {
+                            connection.end();
+                            redirectWithStatus(res, previousPage, 'review_added');
+                        });
+                    }
+                });
+            } else {
                 connection.end();
-                if (err) {
-                    console.error(err);
-                    return res.send("Erro ao guardar review.");
-                }
-                res.send("<script>alert('Review guardada/atualizada com sucesso!'); window.history.back();</script>");
-            });
-        };
-
-        if (results.length > 0) {
-            saveReview(results[0].id_conteudo);
-        } else {
-            const insertMovieSql = 'INSERT INTO Conteudo (tipo, nome, poster_url, tmdb_id) VALUES (?, ?, ?, ?)';
-            connection.query(insertMovieSql, [tipo, titulo, poster, tmdb_id], (err, result) => {
-                if (err) {
-                    connection.end();
-                    return res.send("Erro ao importar filme para review.");
-                }
-                saveReview(result.insertId);
-            });
-        }
+                res.redirect(previousPage);
+            }
+        });
     });
 });
 

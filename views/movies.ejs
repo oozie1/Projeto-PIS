@@ -9,7 +9,9 @@
 </head>
 <body>
 
-    <a href="/" style="display:inline-block; margin-bottom: 20px; font-weight:600;">&larr; Voltar</a>
+    <a href="<%= (typeof origin !== 'undefined' && origin === 'perfil') ? '/auth/perfil' : '/' %>" style="display:inline-block; margin-bottom: 20px; font-weight:600;">
+        &larr; Voltar <%= (typeof origin !== 'undefined' && origin === 'perfil') ? 'ao Perfil' : '' %>
+    </a>
 
     <div class="movie-header">
         <% if (movie.poster_path) { %>
@@ -40,6 +42,7 @@
                     <%= movie.credits.cast.slice(0, 5).map(actor => actor.name).join(', ') %>
                 </div>
             <% } %>
+
             <div class="action-bar">
                 <% if (user) { %>
                     <form action="/api/conteudo/favoritos" method="POST" class="icon-form">
@@ -56,9 +59,11 @@
                     <form action="/api/conteudo/vistos" method="POST" class="icon-form">
                         <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
                         <input type="hidden" name="titulo" value="<%= movie.title || movie.name %>">
+                        <input type="hidden" name="poster" value="<%= movie.poster_path %>">
+                        <input type="hidden" name="tipo" value="<%= movie.title ? 'Filme' : 'Serie' %>">
                         
-                        <button type="submit" class="btn-icon eye" title="Marcar como Visto">
-                            <i class="fa-regular fa-eye"></i>
+                        <button type="submit" class="btn-icon eye <%= (typeof isVisto !== 'undefined' && isVisto) ? 'active' : '' %>" title="<%= (typeof isVisto !== 'undefined' && isVisto) ? 'Remover dos Vistos' : 'Marcar como Visto' %>">
+                            <i class="<%= (typeof isVisto !== 'undefined' && isVisto) ? 'fa-solid' : 'fa-regular' %> fa-eye"></i>
                         </button>
                     </form>
 
@@ -104,70 +109,72 @@
     </div>
 
     <div class="review-section">
-    <% if (user) { %>
-        <h3 style="color: #fff; margin-bottom: 20px;">A tua Avaliação</h3>
-        
-        <form action="/api/conteudo/review" method="POST" style="margin-bottom: 40px;">
-            <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
-            <input type="hidden" name="titulo" value="<%= movie.title || movie.name %>">
-            <input type="hidden" name="poster" value="<%= movie.poster_path %>">
-            <input type="hidden" name="tipo" value="<%= movie.title ? 'Filme' : 'Serie' %>">
+        <% if (user) { %>
+            <h3 style="color: #fff; margin-bottom: 20px;">A tua Avaliação</h3>
             
-            <input type="hidden" id="ratingInput" name="classificacao" 
-                   value="<%= (typeof userReview !== 'undefined' && userReview) ? userReview.classificacao : '' %>">
-
-            <div class="star-rating-container" id="starContainer">
-                <% for(let i=1; i<=10; i++) { %>
-                    <i class="fa-star fa-regular star-item" data-value="<%= i %>"></i>
-                <% } %>
-            </div>
-
-            <textarea name="critica" placeholder="Escreve aqui a tua opinião... O que achaste do filme?" rows="3" style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: white; border: 1px solid #444; margin-top: 10px; resize: vertical;"><%= (typeof userReview !== 'undefined' && userReview) ? userReview.critica : '' %></textarea>
-            
-            <button type="submit" class="btn-yellow" style="margin-top: 10px;">
-                <%= (typeof userReview !== 'undefined' && userReview) ? 'Atualizar Review' : 'Publicar Review' %>
-            </button>
-        </form>
-    <% } else { %>
-        <div style="text-align:center; padding: 20px; background: #222; border-radius: 8px; margin-bottom: 30px;">
-            <p style="color:#ccc;">Faz <a href="/auth/login" style="color: #f5c518;">login</a> para deixares a tua opinião.</p>
-        </div>
-    <% } %>
-
-    <div class="community-reviews" style="border-top: 1px solid #333; padding-top: 30px;">
-        <h3 style="color: #f5c518; margin-bottom: 20px;"><i class="fa-regular fa-comments"></i> Opiniões da Comunidade</h3>
-
-        <% if (typeof publicReviews !== 'undefined' && publicReviews.length > 0) { %>
-            <div class="reviews-list" style="display: flex; flex-direction: column; gap: 15px;">
-                <% publicReviews.forEach(rev => { %>
-                    <div class="review-bubble" style="background: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 4px solid #f5c518;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-weight: bold; color: white; font-size: 1rem;">
-                                <%= rev.nome_utilizador %>
-                            </span>
-                            <span style="color: #f5c518; font-size: 0.9rem;">
-                                <i class="fa-solid fa-star"></i> <%= rev.classificacao %>/10
-                            </span>
-                        </div>
-                        <% if (rev.critica) { %>
-                            <p style="color: #ccc; font-size: 0.95rem; margin: 0; line-height: 1.5;">
-                                "<%= rev.critica %>"
-                            </p>
-                        <% } else { %>
-                            <p style="color: #666; font-size: 0.85rem; font-style: italic; margin: 0;">
-                                (Sem comentário escrito)
-                            </p>
-                        <% } %>
-                    </div>
-                <% }) %>
-            </div>
+            <form action="/api/conteudo/review" method="POST" style="margin-bottom: 40px;">
+                <input type="hidden" name="tmdb_id" value="<%= movie.id %>">
+                <input type="hidden" name="titulo" value="<%= movie.title || movie.name %>">
+                <input type="hidden" name="poster" value="<%= movie.poster_path %>">
+                <input type="hidden" name="tipo" value="<%= movie.title ? 'Filme' : 'Serie' %>">
+                
+                <input type="hidden" id="ratingInput" name="classificacao" 
+                       value="<%= (typeof userReview !== 'undefined' && userReview) ? userReview.classificacao : '' %>">
+    
+                <div class="star-rating-container" id="starContainer">
+                    <% for(let i=1; i<=10; i++) { %>
+                        <i class="fa-star fa-regular star-item" data-value="<%= i %>"></i>
+                    <% } %>
+                </div>
+    
+                <textarea name="critica" placeholder="Escreve aqui a tua opinião... O que achaste do filme?" rows="3" style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: white; border: 1px solid #444; margin-top: 10px; resize: vertical;"><%= (typeof userReview !== 'undefined' && userReview) ? userReview.critica : '' %></textarea>
+                
+                <button type="submit" class="btn-yellow" style="margin-top: 10px;">
+                    <%= (typeof userReview !== 'undefined' && userReview) ? 'Atualizar Review' : 'Publicar Review' %>
+                </button>
+            </form>
         <% } else { %>
-            <p style="color: #777; font-style: italic;">Ainda não há opiniões sobre este filme. Sê o primeiro a comentar!</p>
+            <div style="text-align:center; padding: 20px; background: #222; border-radius: 8px; margin-bottom: 30px;">
+                <p style="color:#ccc;">Faz <a href="/auth/login" style="color: #f5c518;">login</a> para deixares a tua opinião.</p>
+            </div>
         <% } %>
+    
+        <div class="community-reviews" style="border-top: 1px solid #333; padding-top: 30px;">
+            <h3 style="color: #f5c518; margin-bottom: 20px;"><i class="fa-regular fa-comments"></i> Opiniões da Comunidade</h3>
+    
+            <% if (typeof publicReviews !== 'undefined' && publicReviews.length > 0) { %>
+                <div class="reviews-list" style="display: flex; flex-direction: column; gap: 15px;">
+                    <% publicReviews.forEach(rev => { %>
+                        <div class="review-bubble" style="background: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 4px solid #f5c518;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: bold; color: white; font-size: 1rem;">
+                                    <%= rev.nome_utilizador %>
+                                </span>
+                                <span style="color: #f5c518; font-size: 0.9rem;">
+                                    <i class="fa-solid fa-star"></i> <%= rev.classificacao %>/10
+                                </span>
+                            </div>
+                            <% if (rev.critica) { %>
+                                <p style="color: #ccc; font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                                    "<%= rev.critica %>"
+                                </p>
+                            <% } else { %>
+                                <p style="color: #666; font-size: 0.85rem; font-style: italic; margin: 0;">
+                                    (Sem comentário escrito)
+                                </p>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p style="color: #777; font-style: italic;">Ainda não há opiniões sobre este filme. Sê o primeiro a comentar!</p>
+            <% } %>
+        </div>
     </div>
-</div>
 
-    </div> <script src="/js/movie_details.js"></script>
+    <div id="toast-box">Notificação</div>
+
+    <script src="/js/movie_details.js"></script>
 
 </body>
 </html>

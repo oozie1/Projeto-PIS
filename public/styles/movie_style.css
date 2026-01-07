@@ -233,3 +233,90 @@ textarea:focus {
 }
 
 .list-option:hover { background: #333; }
+
+.btn-icon.eye.active {
+    color: #2ecc71;
+}
+
+#toast-box {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 50px;
+    padding: 16px;
+    position: fixed;
+    z-index: 2000;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    border: 1px solid #444;
+    opacity: 0;
+    transition: opacity 0.5s, bottom 0.5s;
+}
+
+#toast-box.show {
+    visibility: visible;
+    opacity: 1;
+    bottom: 50px;
+}
+
+#toast-box.success { 
+    border-color: #2ecc71; 
+    color: #2ecc71; 
+}
+#toast-box.remove { 
+    border-color: #e21c3c; 
+    color: #e21c3c; 
+}
+#toast-box.info { 
+    border-color: #f5c518; 
+    color: #f5c518; 
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 2rem;
+    color: #555;
+    transition: transform 0.2s ease, color 0.3s ease;
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    transform: scale(1.15);
+}
+
+.btn-icon i {
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+.btn-icon.heart:hover i {
+    color: #e21c3c;
+}
+
+.btn-icon.heart.active i,
+.btn-icon.heart.active .fa-heart {
+    color: #e21c3c !important;
+    font-weight: 900 !important;
+    filter: drop-shadow(0 0 5px rgba(226, 28, 60, 0.8));
+}
+
+.btn-icon.eye:hover i {
+    color: #2ecc71;
+}
+
+.btn-icon.eye.active i,
+.btn-icon.eye.active .fa-eye {
+    color: #2ecc71 !important;
+    font-weight: 900 !important;
+    filter: drop-shadow(0 0 5px rgba(46, 204, 113, 0.8));
+}

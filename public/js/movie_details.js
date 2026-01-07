@@ -52,4 +52,31 @@ document.addEventListener("DOMContentLoaded", function() {
             listModal.style.display = "none";
         }
     }
+
+    const toastBox = document.getElementById("toast-box");
+    
+    function showToast(message, type) {
+        if (!toastBox) return;
+        
+        toastBox.innerText = message;
+        toastBox.className = "show " + type;
+        
+        setTimeout(function(){ 
+            toastBox.className = toastBox.className.replace("show", ""); 
+        }, 3000);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+    if (status) {
+        if (status === 'fav_added') showToast("Adicionado aos Favoritos!", "success");
+        else if (status === 'fav_removed') showToast("Removido dos Favoritos.", "remove");
+        else if (status === 'seen_added') showToast("Marcado como Visto!", "success");
+        else if (status === 'seen_removed') showToast("Desmarcado como Visto.", "remove");
+        else if (status === 'review_added') showToast("Review publicada!", "info");
+        else if (status === 'review_updated') showToast("Review atualizada!", "info");
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: newUrl}, '', newUrl);
+    }
 });

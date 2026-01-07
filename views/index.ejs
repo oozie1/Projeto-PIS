@@ -52,9 +52,9 @@
         <div class="category-title">
             <% if (selectedGenre && typeof genres !== 'undefined') { %>
                 <% const gName = genres.find(g => g.id == selectedGenre)?.name || 'Filtro'; %>
-                📂 Filmes de <%= gName %>
+                 Filmes de <%= gName %>
             <% } else { %>
-                🔍 Resultados da Pesquisa
+                 Resultados da Pesquisa
             <% } %>
         </div>
 
@@ -78,7 +78,7 @@
 
     <% } else { %>
 
-        <div class="category-title">🔥 Tendências de Hoje</div>
+        <div class="category-title"> Tendências de Hoje</div>
         <div class="movie-row" id="trending-row" data-page="1">
             <% if (typeof trendingMovies !== 'undefined') { %>
                 <% trendingMovies.forEach(movie => { %>
@@ -98,7 +98,7 @@
             <% } %>
         </div>
 
-        <div class="category-title">🍿 Filmes Populares</div>
+        <div class="category-title"> Filmes Populares</div>
         <div class="movie-row" id="popular-row" data-page="1">
             <% if (typeof popularMovies !== 'undefined') { %>
                 <% popularMovies.forEach(movie => { %>
@@ -116,7 +116,7 @@
             <% } %>
         </div>
 
-        <div class="category-title">⭐ Aclamados pela Crítica</div>
+        <div class="category-title"> Aclamados pela Crítica</div>
         <div class="movie-row" id="top-row" data-page="1">
             <% if (typeof topRatedMovies !== 'undefined') { %>
                 <% topRatedMovies.forEach(movie => { %>
@@ -134,7 +134,7 @@
             <% } %>
         </div>
 
-        <div class="category-title" style="margin-top: 60px; border-color: #fff;">🎬 Descobrir Mais Filmes</div>
+        <div class="category-title" style="margin-top: 60px; border-color: #fff;"> Descobrir Mais Filmes</div>
         <div class="movie-grid" id="discover-movie-grid" data-page="<%= typeof randomPageMovie !== 'undefined' ? randomPageMovie : 1 %>">
             <% if (typeof discoveryMovies !== 'undefined') { %>
                 <% discoveryMovies.forEach(movie => { %>
@@ -156,7 +156,7 @@
             </button>
         </div>
 
-        <div class="category-title" style="margin-top: 60px; border-color: #fff;">📺 Descobrir Mais Séries</div>
+        <div class="category-title" style="margin-top: 60px; border-color: #fff;"> Descobrir Mais Séries</div>
         <div class="movie-grid" id="discover-tv-grid" data-page="<%= typeof randomPageTV !== 'undefined' ? randomPageTV : 1 %>">
             <% if (typeof discoveryTV !== 'undefined') { %>
                 <% discoveryTV.forEach(tv => { %>
