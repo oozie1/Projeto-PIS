@@ -4,29 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O Meu Perfil</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; margin: 0; padding: 40px; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-        h1 { margin: 0; color: #f5c518; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .card { background: #1e1e1e; border-radius: 8px; overflow: hidden; transition: transform 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .card:hover { transform: scale(1.05); z-index: 10; border: 2px solid #f5c518; }
-        .card a { text-decoration: none; color: inherit; display: block; height: 100%; }
-        .card img { width: 100%; height: 300px; object-fit: cover; }
-        .info { padding: 15px; text-align: center; }
-        .info h4 { margin: 0; font-size: 1rem; color: #fff; }
-        .btn-home { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; }
-        .btn-logout { background: #e21c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: opacity 0.2s; }
-        .btn-logout:hover { opacity: 0.8; }
-        .empty-state { text-align: center; padding: 50px; color: #777; font-size: 1.2rem; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/perfil_style.css">
 </head>
 <body>
 
     <header>
         <div>
             <h1>Olá, <%= user.nome_utilizador %>!</h1>
-            <p style="color: #aaa; margin: 5px 0 0 0;">Bem-vindo à tua área pessoal.</p>
+            <p style="color: #aaa; margin: 5px 0 0 0;">
+                <%= (typeof user.is_admin !== 'undefined' && (user.is_admin === 1 || user.is_admin === true)) ? 'Painel de Administração' : 'Bem-vindo à tua área pessoal.' %>
+            </p>
         </div>
         <div>
             <a href="/" class="btn-home">Voltar ao Início</a>
@@ -34,27 +22,155 @@
         </div>
     </header>
 
-    <h2 style="border-left: 5px solid #f5c518; padding-left: 15px; margin-bottom: 25px;">Os teus Favoritos</h2>
+    <% if (typeof user.is_admin !== 'undefined' && (user.is_admin === 1 || user.is_admin === true)) { %>
+        
+        <div class="section-header">
+            <h2>Gerir Utilizadores</h2>
+            <button class="btn-action btn-create" onclick="openModal('createModal')">+ Criar Utilizador</button>
+        </div>
 
-    <% if (favoritos.length === 0) { %>
-        <div class="empty-state">
-            <p>Ainda não tens filmes favoritos.</p>
-            <a href="/" style="color: #f5c518; text-decoration: none;">Vai explorar o catálogo!</a>
+        <% if (typeof listaUsuarios !== 'undefined') { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Cargo</th>
+                        <th style="text-align: right;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% listaUsuarios.forEach(u => { %>
+                        <tr>
+                            <td><%= u.nome_utilizador %></td>
+                            <td><%= u.email %></td>
+                            <td>
+                                <span class="badge <%= (u.is_admin === 1 || u.is_admin === true) ? 'badge-admin' : 'badge-user' %>">
+                                    <%= (u.is_admin === 1 || u.is_admin === true) ? 'Admin' : 'Utilizador' %>
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <% if (u.id_utilizador !== user.id_utilizador) { %>
+                                    <button class="btn-action btn-edit-pencil" onclick="openEditModal('<%= u.id_utilizador %>', '<%= u.nome_utilizador %>', '<%= u.is_admin %>')">
+                                        ✎ Editar
+                                    </button>
+                                <% } else { %>
+                                    <span style="color: #555; font-size: 12px;">(Tu)</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } %>
+
+        <div id="createModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('createModal')">&times;</span>
+                <h3 style="color: #f5c518;">Novo Utilizador</h3>
+                <form action="/auth/admin/create" method="POST">
+                    <input type="text" name="nome" placeholder="Nome" required>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="password" name="senha" placeholder="Senha" required>
+                    <button type="submit" class="btn-action btn-create" style="width:100%;">Registar</button>
+                </form>
+            </div>
         </div>
+
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('editModal')">&times;</span>
+                <h3 style="color: #f5c518;">Editar Utilizador</h3>
+                <form id="editForm" method="POST">
+                    <label style="font-size: 12px; color: #777;">Nome de Utilizador</label>
+                    <input type="text" name="novoNome" id="editNome" required>
+                    <label style="font-size: 12px; color: #777;">Cargo</label>
+                    <select name="status" id="editAdminStatus">
+                        <option value="0">Utilizador Comum</option>
+                        <option value="1">Administrador</option>
+                    </select>
+                    <button type="submit" class="btn-action btn-create" style="width:100%; background: #f5c518; color: black;">Guardar Alterações</button>
+                </form>
+                <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+                <form id="deleteForm" method="POST" onsubmit="return confirm('Tem a certeza?')">
+                    <button type="submit" class="btn-action btn-delete">🗑 Eliminar Conta</button>
+                </form>
+            </div>
+        </div>
+
     <% } else { %>
-        <div class="grid">
-            <% favoritos.forEach(filme => { %>
-                <div class="card">
-                    <a href="/movie/<%= filme.tmdb_id %>">
-                        <img src="https://image.tmdb.org/t/p/w300<%= filme.poster_url %>" alt="<%= filme.nome %>">
-                        <div class="info">
-                            <h4><%= filme.nome %></h4>
-                        </div>
-                    </a>
-                </div>
-            <% }) %>
+
+        <h2 style="border-left: 5px solid #f5c518; padding-left: 15px; margin-bottom: 25px;">Os teus Favoritos</h2>
+        <% if (favoritos.length === 0) { %>
+            <div class="empty-state">
+                <p>Ainda não tens filmes ou séries favoritos.</p>
+                <a href="/" style="color: #f5c518; text-decoration: none;">Vai explorar o catálogo!</a>
+            </div>
+        <% } else { %>
+            <div class="grid">
+                <% favoritos.forEach(filme => { %>
+                    <div class="card">
+                        <a href="/details/<%= (filme.tipo === 'Serie' ? 'tv' : 'movie') %>/<%= filme.tmdb_id %>">
+                            <img src="https://image.tmdb.org/t/p/w300<%= filme.poster_url %>" alt="<%= filme.nome %>">
+                            <div class="info">
+                                <h4><%= filme.nome %></h4>
+                            </div>
+                        </a>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <div class="section-header" style="margin-top: 50px;">
+            <h2>As Minhas Listas</h2>
+            <button class="btn-action btn-create" onclick="openModal('newListModal')">+ Criar Nova Lista</button>
         </div>
+
+        <% if (typeof listas !== 'undefined' && listas.length > 0) { %>
+            <div class="grid">
+                <% listas.forEach(lista => { %>
+                    <div class="card" style="padding: 20px; text-align: center;">
+                        <i class="fa-solid fa-list-ul" style="font-size: 2.5rem; color: #f5c518; margin-bottom: 10px;"></i>
+                        <h4><%= lista.nome_lista %></h4>
+                        <a href="/perfil/lista/<%= lista.id_lista %>" class="btn-action btn-edit-pencil" style="margin-top: 15px; justify-content: center; text-decoration: none;">Ver Lista</a>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="empty-state"><p>Ainda não criaste nenhuma lista.</p></div>
+        <% } %>
+
+        <div id="newListModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('newListModal')">&times;</span>
+                <h3 style="color: #f5c518;">Nova Lista</h3>
+                <form action="/api/listas/criar" method="POST">
+                    <input type="text" name="nome_lista" placeholder="Nome da lista (ex: Para Ver Depois)" required>
+                    <button type="submit" class="btn-action btn-create" style="width:100%;">Criar</button>
+                </form>
+            </div>
+        </div>
+
     <% } %>
 
+    <script>
+        function openModal(id) { document.getElementById(id).style.display = "block"; }
+        function closeModal(id) { document.getElementById(id).style.display = "none"; }
+        
+        function openEditModal(id, nome, isAdmin) {
+            document.getElementById("editNome").value = nome;
+            document.getElementById("editForm").action = "/auth/admin/update-full/" + id;
+            document.getElementById("deleteForm").action = "/auth/admin/delete/" + id;
+            const isAdm = (isAdmin === 'true' || isAdmin === '1' || isAdmin === true || isAdmin === 1);
+            document.getElementById("editAdminStatus").value = isAdm ? '1' : '0';
+            openModal('editModal');
+        }
+
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>

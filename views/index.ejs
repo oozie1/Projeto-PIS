@@ -5,66 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Início - CineApp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #fff; margin: 0; padding-bottom: 50px; }
-        
-        /* --- NAVBAR --- */
-        nav { background: #000; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
-        .logo { font-size: 1.5rem; font-weight: bold; color: #f5c518; text-decoration: none; }
-        
-        .search-box input { padding: 10px; border-radius: 20px; border: none; background: #333; color: white; width: 300px; padding-left: 15px; }
-        .search-box input:focus { outline: 2px solid #f5c518; }
-
-        .auth-links { display: flex; align-items: center; gap: 20px; }
-        .auth-links a { color: #ccc; text-decoration: none; font-size: 0.95rem; transition: 0.2s; }
-        .auth-links a:hover { color: white; }
-
-        /* Botão de Perfil */
-        .user-profile { display: flex; align-items: center; gap: 10px; background: #222; padding: 5px 15px; border-radius: 20px; }
-        .user-profile:hover { background: #333; }
-        .user-icon { font-size: 1.2rem; color: #f5c518; }
-
-        /* --- ESTILOS GERAIS --- */
-        .category-title { margin: 40px 0 15px 40px; font-size: 1.5rem; font-weight: 700; color: #e5e5e5; border-left: 5px solid #f5c518; padding-left: 15px; }
-        
-        .movie-card {
-            flex: 0 0 auto;
-            width: 160px;
-            transition: transform 0.3s;
-            position: relative;
-            text-decoration: none; color: inherit; margin-bottom: 10px;
-        }
-        .movie-card:hover { transform: scale(1.08); z-index: 10; }
-        .movie-card img { width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .movie-info { margin-top: 8px; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-        .rating { color: #f5c518; font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
-
-        /* MODO 1: FILAS (Scroll Horizontal) */
-        .movie-row {
-            display: flex;
-            overflow-x: auto;
-            padding: 10px 40px;
-            gap: 15px;
-            scroll-behavior: smooth;
-        }
-        .movie-row::-webkit-scrollbar { height: 8px; }
-        .movie-row::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        .movie-row::-webkit-scrollbar-track { background: #121212; }
-
-        /* MODO 2: GRELHA (Grid) - Para Pesquisa e Discovery */
-        .movie-grid {
-            display: flex;
-            flex-wrap: wrap;
-            padding: 20px 40px;
-            gap: 25px;
-            justify-content: center;
-        }
-    </style>
+    <link rel="stylesheet" href="/styles/index_style.css">
 </head>
 <body>
 
     <nav>
-        <a href="/" class="logo">CineApp</a>
+        <a href="/" class="logo">CinePIS</a>
         
         <form action="/search" method="GET" class="search-box">
             <input type="text" name="q" placeholder="Pesquisar filmes, atores...">
@@ -72,7 +18,7 @@
 
         <div class="auth-links">
             <% if (typeof user !== 'undefined' && user) { %>
-                <a href="/perfil" class="user-profile">
+                <a href="/auth/perfil" class="user-profile">
                     <i class="fa-solid fa-circle-user user-icon"></i>
                     <span style="font-weight: bold; color: white;"><%= user.nome_utilizador %></span>
                 </a>
@@ -86,21 +32,48 @@
         </div>
     </nav>
 
-    <% if (typeof movies !== 'undefined' && movies.length > 0) { %>
+    <div class="filter-bar">
+        <form action="/filter" method="GET">
+            <select name="genre" class="genre-select" onchange="this.form.submit()">
+                <option value="">Todos os Géneros</option>
+                <% if (typeof genres !== 'undefined') { %>
+                    <% genres.forEach(g => { %>
+                        <option value="<%= g.id %>" <%= selectedGenre == g.id ? 'selected' : '' %>>
+                            <%= g.name %>
+                        </option>
+                    <% }) %>
+                <% } %>
+            </select>
+        </form>
+    </div>
+
+    <% if (isSearch) { %>
         
-        <div class="category-title">🔍 Resultados da Pesquisa</div>
+        <div class="category-title">
+            <% if (selectedGenre && typeof genres !== 'undefined') { %>
+                <% const gName = genres.find(g => g.id == selectedGenre)?.name || 'Filtro'; %>
+                📂 Filmes de <%= gName %>
+            <% } else { %>
+                🔍 Resultados da Pesquisa
+            <% } %>
+        </div>
+
         <div class="movie-grid">
-            <% movies.forEach(movie => { %>
-                <a href="/movie/<%= movie.id %>" class="movie-card">
-                    <% if (movie.poster_path) { %>
-                        <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
-                    <% } else { %>
-                        <img src="https://via.placeholder.com/160x240?text=Sem+Imagem" alt="Sem Imagem">
-                    <% } %>
-                    <div class="movie-info"><%= movie.title %></div>
-                    <div class="rating">★ <%= movie.vote_average.toFixed(1) %></div>
-                </a>
-            <% }) %>
+            <% if (movies.length > 0) { %>
+                <% movies.forEach(movie => { %>
+                    <a href="/details/<%= movie.media_type || 'movie' %>/<%= movie.id %>" class="movie-card">
+                        <% if (movie.poster_path) { %>
+                            <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title || movie.name %>">
+                        <% } else { %>
+                            <img src="https://via.placeholder.com/160x240?text=Sem+Imagem" alt="Sem Imagem">
+                        <% } %>
+                        <div class="movie-info"><%= movie.title || movie.name %></div>
+                        <div class="rating">★ <%= movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A' %></div>
+                    </a>
+                <% }) %>
+            <% } else { %>
+                <p style="padding-left: 40px;">Nenhum resultado encontrado.</p>
+            <% } %>
         </div>
 
     <% } else { %>
@@ -109,27 +82,29 @@
         <div class="movie-row">
             <% if (typeof trendingMovies !== 'undefined') { %>
                 <% trendingMovies.forEach(movie => { %>
-                    <a href="/movie/<%= movie.id %>" class="movie-card">
+                    <a href="/details/<%= movie.media_type || 'movie' %>/<%= movie.id %>" class="movie-card">
                         <% if (movie.poster_path) { %>
-                            <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
-                        <% } else { %> <img src="https://via.placeholder.com/160x240" alt="Sem Imagem"> <% } %>
-                        <div class="movie-info"><%= movie.title %></div>
-                        <div class="rating">★ <%= movie.vote_average.toFixed(1) %></div>
+                            <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title || movie.name %>">
+                        <% } else { %> 
+                            <img src="https://via.placeholder.com/160x240" alt="Sem Imagem"> 
+                        <% } %>
+                        <div class="movie-info"><%= movie.title || movie.name %></div>
+                        <div class="rating">★ <%= movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A' %></div>
                     </a>
                 <% }) %>
             <% } %>
         </div>
 
-        <div class="category-title">🍿 Populares</div>
+        <div class="category-title">🍿 Filmes Populares</div>
         <div class="movie-row">
             <% if (typeof popularMovies !== 'undefined') { %>
                 <% popularMovies.forEach(movie => { %>
-                    <a href="/movie/<%= movie.id %>" class="movie-card">
+                    <a href="/details/movie/<%= movie.id %>" class="movie-card">
                         <% if (movie.poster_path) { %>
                             <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
                         <% } %>
                         <div class="movie-info"><%= movie.title %></div>
-                        <div class="rating">★ <%= movie.vote_average.toFixed(1) %></div>
+                        <div class="rating">★ <%= movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A' %></div>
                     </a>
                 <% }) %>
             <% } %>
@@ -139,12 +114,12 @@
         <div class="movie-row">
             <% if (typeof topRatedMovies !== 'undefined') { %>
                 <% topRatedMovies.forEach(movie => { %>
-                    <a href="/movie/<%= movie.id %>" class="movie-card">
+                    <a href="/details/movie/<%= movie.id %>" class="movie-card">
                         <% if (movie.poster_path) { %>
                             <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
                         <% } %>
                         <div class="movie-info"><%= movie.title %></div>
-                        <div class="rating">★ <%= movie.vote_average.toFixed(1) %></div>
+                        <div class="rating">★ <%= movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A' %></div>
                     </a>
                 <% }) %>
             <% } %>
@@ -154,18 +129,37 @@
         <div class="movie-grid">
             <% if (typeof discoveryMovies !== 'undefined') { %>
                 <% discoveryMovies.forEach(movie => { %>
-                    <a href="/movie/<%= movie.id %>" class="movie-card">
+                    <a href="/details/movie/<%= movie.id %>" class="movie-card">
                         <% if (movie.poster_path) { %>
                             <img src="<%= imageBaseUrl + movie.poster_path %>" alt="<%= movie.title %>">
                         <% } else { %>
                             <img src="https://via.placeholder.com/160x240?text=Sem+Imagem" alt="Sem Imagem">
                         <% } %>
                         <div class="movie-info"><%= movie.title %></div>
-                        <div class="rating">★ <%= movie.vote_average.toFixed(1) %></div>
+                        <div class="rating">★ <%= movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A' %></div>
                     </a>
                 <% }) %>
             <% } else { %>
-                <p>A carregar filmes...</p>
+                <p style="padding-left: 40px;">A carregar filmes...</p>
+            <% } %>
+        </div>
+
+        <div class="category-title" style="margin-top: 60px; border-color: #fff;">📺 Descobrir Mais Séries</div>
+        <div class="movie-grid">
+            <% if (typeof discoveryTV !== 'undefined') { %>
+                <% discoveryTV.forEach(tv => { %>
+                    <a href="/details/tv/<%= tv.id %>" class="movie-card">
+                        <% if (tv.poster_path) { %>
+                            <img src="<%= imageBaseUrl + tv.poster_path %>" alt="<%= tv.name %>">
+                        <% } else { %>
+                            <img src="https://via.placeholder.com/160x240?text=Sem+Imagem" alt="Sem Imagem">
+                        <% } %>
+                        <div class="movie-info"><%= tv.name %></div>
+                        <div class="rating">★ <%= tv.vote_average ? tv.vote_average.toFixed(1) : 'N/A' %></div>
+                    </a>
+                <% }) %>
+            <% } else { %>
+                <p style="padding-left: 40px;">A carregar séries...</p>
             <% } %>
         </div>
 
