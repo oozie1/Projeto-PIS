@@ -161,4 +161,52 @@ router.post('/admin/toggle/:id/:status', (req, res) => {
     });
 });
 
+router.post('/admin/create', async (req, res) => {
+    if (!req.session.user || !req.session.user.is_admin) return res.status(403).send("Proibido");
+    
+    const { nome, email, senha } = req.body;
+    const hash = await bcrypt.hash(senha, 10);
+    const connection = createNewConnection();
+    
+    connection.query('INSERT INTO Utilizadores (nome_utilizador, email, password_hash) VALUES (?, ?, ?)', 
+    [nome, email, hash], (err) => {
+        connection.end();
+        res.redirect('/auth/perfil');
+    });
+});
+
+router.post('/admin/delete/:id', (req, res) => {
+    if (!req.session.user || !req.session.user.is_admin) return res.status(403).send("Acesso negado");
+    
+    const userId = req.params.id;
+    const connection = createNewConnection();
+
+    connection.query("DELETE FROM Favoritos WHERE id_utilizador = ?", [userId], () => {
+        connection.query("DELETE FROM Reviews WHERE id_utilizador = ?", [userId], () => {
+            connection.query("DELETE FROM Utilizadores WHERE id_utilizador = ?", [userId], (err) => {
+                connection.end();
+                if (err) return res.status(500).send("Erro ao apagar");
+                res.redirect('/auth/perfil');
+            });
+        });
+    });
+});
+
+router.post('/admin/update-full/:id', (req, res) => {
+    if (!req.session.user || !req.session.user.is_admin) return res.status(403).send("Proibido");
+    
+    const { novoNome, status } = req.body;
+    const id = req.params.id;
+    const connection = createNewConnection();
+    
+    const sql = 'UPDATE Utilizadores SET nome_utilizador = ?, is_admin = ? WHERE id_utilizador = ?';
+    connection.query(sql, [novoNome, status, id], (err) => {
+        connection.end();
+        if (err) return res.send("Erro ao editar");
+        res.redirect('/auth/perfil');
+    });
+});
+
+module.exports = router;
+
 module.exports = router;
