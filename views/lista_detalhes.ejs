@@ -14,14 +14,30 @@
             <span style="color: #f5c518; text-transform: uppercase; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">A tua lista personalizada</span>
             <h1><%= nomeLista %></h1>
         </div>
-        <a href="/auth/perfil" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Voltar ao Perfil</a>
+        
+        <div class="header-actions">
+            <form action="/api/listas/apagar/<%= idLista %>" method="POST" onsubmit="return confirm('Tens a certeza que queres apagar esta lista? Esta ação é irreversível!');">
+                <button type="submit" class="btn-danger"><i class="fa-solid fa-trash"></i> Apagar Lista</button>
+            </form>
+
+            <a href="/auth/perfil" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+        </div>
     </header>
 
     <% if (filmes && filmes.length > 0) { %>
         <div class="grid">
             <% filmes.forEach(f => { %>
-                <div class="card">
-                    <a href="/movie/<%= f.tmdb_id %>" style="text-decoration: none;">
+                <div class="card" style="position: relative;">
+                    
+                    <form action="/api/listas/remover-item" method="POST" style="position: absolute; top:0; right:0; z-index: 50;">
+                        <input type="hidden" name="id_lista" value="<%= idLista %>">
+                        <input type="hidden" name="id_conteudo" value="<%= f.id_conteudo %>">
+                        <button type="submit" class="btn-remove-movie" title="Remover da lista">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </form>
+
+                    <a href="/details/<%= (f.tipo === 'Serie' ? 'tv' : 'movie') %>/<%= f.tmdb_id %>" style="text-decoration: none;">
                         <img src="<%= imageBaseUrl + f.poster_url %>" alt="<%= f.nome %>">
                         <div class="info">
                             <h4><%= f.nome %></h4>

@@ -84,3 +84,40 @@ h1 {
     margin-bottom: 20px;
     display: block;
 }
+
+.btn-remove-movie {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(226, 28, 60, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 20; /* Fica acima do link */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+.btn-remove-movie:hover { 
+    background: red; 
+}
+        
+.header-actions { 
+    display: flex; 
+    gap: 10px; 
+    align-items: center; }
+
+.btn-danger { 
+    background: #e21c3c; 
+    color: white; 
+    border: none; 
+    padding: 10px 15px; 
+    border-radius: 5px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    text-decoration: none;
+}

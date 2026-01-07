@@ -14,38 +14,57 @@ async function getDetailsAndRender(req, res, type, id) {
         let userReview = null;
         let isFavorito = false; 
         let listasUsuario = []; 
+        let publicReviews = [];
 
-        if (req.session.user) {
-            const connection = createNewConnection();
-            const userId = req.session.user.id_utilizador;
-            
-            const sqlReview = "SELECT r.classificacao, r.critica FROM Reviews r JOIN Conteudo c ON r.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND r.id_utilizador = ?";
-            
-            connection.query(sqlReview, [id, userId], (err, resultsReview) => {
-                if (!err && resultsReview.length > 0) userReview = resultsReview[0];
+        const connection = createNewConnection();
+        const sqlPublicReviews = `
+            SELECT r.classificacao, r.critica, u.nome_utilizador 
+            FROM Reviews r 
+            JOIN Conteudo c ON r.id_conteudo = c.id_conteudo 
+            JOIN Utilizadores u ON r.id_utilizador = u.id_utilizador 
+            WHERE c.tmdb_id = ? 
+            ORDER BY r.id_review DESC`;
 
-                const sqlFav = "SELECT f.id_favoritos FROM Favoritos f JOIN Conteudo c ON f.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND f.id_utilizador = ?";
-                connection.query(sqlFav, [id, userId], (errFav, resultsFav) => {
-                    if (!errFav && resultsFav.length > 0) isFavorito = true;
+        connection.query(sqlPublicReviews, [id], (errPub, resultsPub) => {
+            publicReviews = resultsPub || [];
 
-                    const sqlListas = "SELECT * FROM Listas_Personalizadas WHERE id_utilizador = ?";
-                    connection.query(sqlListas, [userId], (errList, resultsList) => {
-                        listasUsuario = resultsList || [];
-                        connection.end();
-                        res.render('movies', { 
-                            movie, 
-                            imageBaseUrl: IMAGE_BASE_URL, 
-                            userReview, 
-                            isFavorito, 
-                            listasUsuario 
+            if (req.session.user) {
+                const userId = req.session.user.id_utilizador;
+                
+                const sqlReview = "SELECT r.classificacao, r.critica FROM Reviews r JOIN Conteudo c ON r.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND r.id_utilizador = ?";
+                
+                connection.query(sqlReview, [id, userId], (err, resultsReview) => {
+                    if (!err && resultsReview.length > 0) userReview = resultsReview[0];
+
+                    const sqlFav = "SELECT f.id_favoritos FROM Favoritos f JOIN Conteudo c ON f.id_conteudo = c.id_conteudo WHERE c.tmdb_id = ? AND f.id_utilizador = ?";
+                    connection.query(sqlFav, [id, userId], (errFav, resultsFav) => {
+                        if (!errFav && resultsFav.length > 0) isFavorito = true;
+
+                        const sqlListas = "SELECT * FROM Listas_Personalizadas WHERE id_utilizador = ?";
+                        connection.query(sqlListas, [userId], (errList, resultsList) => {
+                            listasUsuario = resultsList || [];
+                            connection.end();
+                            
+                            res.render('movies', { 
+                                movie, imageBaseUrl: IMAGE_BASE_URL, 
+                                userReview, isFavorito, listasUsuario, 
+                                publicReviews
+                            });
                         });
                     });
                 });
-            });
-        } else {
-            res.render('movies', { movie, imageBaseUrl: IMAGE_BASE_URL, userReview: null, isFavorito: false, listasUsuario: [] });
-        }
+            } else {
+                connection.end();
+                res.render('movies', { 
+                    movie, imageBaseUrl: IMAGE_BASE_URL, 
+                    userReview: null, isFavorito: false, listasUsuario: [], 
+                    publicReviews
+                });
+            }
+        });
+
     } catch (error) {
+        console.error(error);
         res.redirect('/');
     }
 }
@@ -74,7 +93,9 @@ exports.getHome = async (req, res) => {
             genres: genresRes.data.genres,
             imageBaseUrl: IMAGE_BASE_URL,
             isSearch: false,
-            selectedGenre: null
+            selectedGenre: null,
+            randomPageMovie: randomPageMovie,
+            randomPageTV: randomPageTV
         });
 
     } catch (error) {
@@ -111,6 +132,9 @@ exports.getFilter = async (req, res) => {
 
 exports.getSearch = async (req, res) => {
     const query = req.query.q;
+    if (!query || query.trim().length === 0) {
+        return res.redirect('/');
+    }
     try {
         const [response, genresRes] = await Promise.all([
             axios.get(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&language=pt-PT`),
@@ -145,4 +169,32 @@ exports.redirectDetails = (req, res) => {
     if (type === 'movie') return res.redirect(`/movie/${id}`);
     if (type === 'tv') return res.redirect(`/tv/${id}`);
     res.redirect('/');
+};
+
+exports.loadMore = async (req, res) => {
+    const { type, page } = req.query;
+    let url = '';
+
+    switch(type) {
+        case 'trending': url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=pt-PT&page=${page}`; break;
+        case 'popular': url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=pt-PT&page=${page}`; break;
+        case 'top_rated': url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=pt-PT&page=${page}`; break;
+        case 'discover_movie': url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=pt-PT&sort_by=popularity.desc&page=${page}`; break;
+        case 'discover_tv': url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=pt-PT&sort_by=popularity.desc&page=${page}`; break;
+        default: return res.json({ results: [] });
+    }
+
+    try {
+        const response = await axios.get(url);
+        const results = response.data.results.map(item => ({
+            id: item.id,
+            title: item.title || item.name,
+            poster_path: item.poster_path,
+            vote_average: item.vote_average ? item.vote_average.toFixed(1) : 'N/A',
+            media_type: item.media_type || (type.includes('tv') ? 'tv' : 'movie')
+        }));
+        res.json({ results });
+    } catch (error) {
+        res.json({ results: [] });
+    }
 };

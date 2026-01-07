@@ -29,7 +29,7 @@
             <button class="btn-action btn-create" onclick="openModal('createModal')">+ Criar Utilizador</button>
         </div>
 
-        <% if (typeof listaUsuarios !== 'undefined') { %>
+        <% if (typeof listaUsuarios !== 'undefined' && listaUsuarios.length > 0) { %>
             <table>
                 <thead>
                     <tr>
@@ -101,12 +101,8 @@
     <% } else { %>
 
         <h2 style="border-left: 5px solid #f5c518; padding-left: 15px; margin-bottom: 25px;">Os teus Favoritos</h2>
-        <% if (favoritos.length === 0) { %>
-            <div class="empty-state">
-                <p>Ainda não tens filmes ou séries favoritos.</p>
-                <a href="/" style="color: #f5c518; text-decoration: none;">Vai explorar o catálogo!</a>
-            </div>
-        <% } else { %>
+        
+        <% if (typeof favoritos !== 'undefined' && favoritos.length > 0) { %>
             <div class="grid">
                 <% favoritos.forEach(filme => { %>
                     <div class="card">
@@ -119,6 +115,11 @@
                     </div>
                 <% }) %>
             </div>
+        <% } else { %>
+            <div class="empty-state">
+                <p>Ainda não tens filmes favoritos.</p>
+                <a href="/" style="color: #f5c518; text-decoration: none;">Vai explorar!</a>
+            </div>
         <% } %>
 
         <div class="section-header" style="margin-top: 50px;">
@@ -129,8 +130,18 @@
         <% if (typeof listas !== 'undefined' && listas.length > 0) { %>
             <div class="grid">
                 <% listas.forEach(lista => { %>
-                    <div class="card" style="padding: 20px; text-align: center;">
-                        <i class="fa-solid fa-list-ul" style="font-size: 2.5rem; color: #f5c518; margin-bottom: 10px;"></i>
+                    <div class="card" style="padding: 20px; text-align: center; position: relative;">
+                        <form action="/api/listas/apagar/<%= lista.id_lista %>" method="POST" onsubmit="return confirm('Apagar lista <%= lista.nome_lista %>?');" style="position: absolute; top: 10px; right: 10px;">
+                            <button type="submit" style="background:none; border:none; color: #e21c3c; cursor: pointer; font-size: 1.1rem;" title="Apagar Lista">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+
+                        <button onclick="openEditListModal('<%= lista.id_lista %>', '<%= lista.nome_lista %>')" style="position: absolute; top: 10px; left: 10px; background:none; border:none; color: #ccc; cursor: pointer; font-size: 1.1rem;" title="Editar Nome">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+
+                        <i class="fa-solid fa-list-ul" style="font-size: 2.5rem; color: #f5c518; margin-bottom: 10px; margin-top: 15px;"></i>
                         <h4><%= lista.nome_lista %></h4>
                         <a href="/perfil/lista/<%= lista.id_lista %>" class="btn-action btn-edit-pencil" style="margin-top: 15px; justify-content: center; text-decoration: none;">Ver Lista</a>
                     </div>
@@ -153,24 +164,19 @@
 
     <% } %>
 
-    <script>
-        function openModal(id) { document.getElementById(id).style.display = "block"; }
-        function closeModal(id) { document.getElementById(id).style.display = "none"; }
-        
-        function openEditModal(id, nome, isAdmin) {
-            document.getElementById("editNome").value = nome;
-            document.getElementById("editForm").action = "/auth/admin/update-full/" + id;
-            document.getElementById("deleteForm").action = "/auth/admin/delete/" + id;
-            const isAdm = (isAdmin === 'true' || isAdmin === '1' || isAdmin === true || isAdmin === 1);
-            document.getElementById("editAdminStatus").value = isAdm ? '1' : '0';
-            openModal('editModal');
-        }
+    <div id="editListModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('editListModal')">&times;</span>
+        <h3 style="color: #f5c518;">Editar Nome da Lista</h3>
+        <form action="/api/listas/editar" method="POST">
+            <input type="hidden" name="id_lista" id="editListId">
+            <input type="text" name="novo_nome" id="editListName" required>
+            <button type="submit" class="btn-action btn-create" style="width:100%; background: #f5c518; color: black;">Guardar</button>
+        </form>
+    </div>
+</div>
 
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = "none";
-            }
-        }
-    </script>
+    <script src="/public/js/perfil.js"></script>
+
 </body>
 </html>
